@@ -9,15 +9,24 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests public/zones.json *.ts *.json *.html *.md"
+    "format": "prettier --write src tests public/zones.json *.ts *.json *.html *.md",
+    "prepare:ai": "node scripts/prepare-ai.mjs",
+    "predev": "npm run prepare:ai",
+    "prebuild": "npm run prepare:ai"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
     "@types/node": "^24.19.2",
+    "esbuild": "0.28.2",
     "fake-indexeddb": "^6.2.4",
     "prettier": "^3.10.1",
     "typescript": "~5.9.3",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-backend-cpu": "4.9.0",
+    "@tensorflow/tfjs-core": "4.9.0",
+    "@tensorflow/tfjs-tflite": "0.0.1-alpha.10"
   }
 }

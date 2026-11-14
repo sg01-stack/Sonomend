@@ -19,8 +19,16 @@ export function demoStage(elapsed: number) {
     return "Library + marked corner · play your calibrated horn now.";
   return "Route complete. End trip to see your report.";
 }
-export function scriptedFrame(at: number, elapsed: number): Frame {
-  const sounding = elapsed >= 44000 && elapsed <= 46000;
+export function scriptedFrame(
+  at: number,
+  elapsed: number,
+  repeats = false,
+): Frame {
+  const sounding = repeats
+    ? [44000, 46000, 48000].some(
+        (start) => elapsed >= start && elapsed <= start + 600,
+      )
+    : elapsed >= 44000 && elapsed <= 46000;
   return { at, rms: sounding ? 0.15 : 0.001, spectrum: [1, 0, 0, 0] };
 }
 export function validateZones(input: unknown) {

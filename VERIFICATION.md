@@ -1,34 +1,27 @@
-# MVP verification
+# Verification — AI and repeated-honk update
 
-Validated in this workspace on 14 November 2026 using Node 24.22.1 and Chromium 156. No physical phone or actual vehicle horn was available.
+Validated in this workspace on 14 November 2026 with Node 24.22.1 and Chromium 156. No physical phone or actual vehicle horn was available.
 
-## Completed
+## Automated results
 
-| Check | Result |
-| --- | --- |
-| `npm test` | **19 passed**, 0 failed or skipped across 3 files. |
-| `npm run build` | **Passed**: strict TypeScript and Vite production bundle. |
-| `npm run test:e2e` | **5 passed**, 0 failed or skipped, mobile and desktop Chromium. |
-| Production `dist/` browser smoke check | **Passed** on port 4173: completed demo, one point plus review, reload and reopen, no page errors, failed asset responses, external requests, or horizontal overflow at 390 px. |
-| Visual inspection | Desktop overview and mobile trip report screenshots inspected. |
+- **34 logic/storage tests passed** across five files, with no failures or skips.
+- **9 Chromium browser tests passed**, with no failures or skips.
+- **Production build passed**, including TypeScript, model integrity verification, local worker bundling, and Vite.
+- **Built-app smoke check passed** on port 4173: actual local model inference, repeat-honk net score 0, saved report after reload, no browser errors/external requests, and no horizontal overflow at 390 px.
 
-The deterministic tests exercised sustained-horn merging, separated honks, brief-gap merging, uncertain distractors, impulse/background rejection, calibration feature extraction, silent crossing points, quiet-zone reviews, corner tags, mic/GPS dropout exclusions, uncertain-event exclusions, stale/weak/unlocated GPS, incomplete crossings, starting inside a zone, boundary drift, late event finalization, idempotent trip end, and IndexedDB round-trips.
+The original detector, coverage, GPS, scoring, IndexedDB persistence, permission-retry, session cleanup, duplicate-start, and deterministic demo tests still pass.
 
-The browser checks exercised:
+New logic checks cover personal embedding consensus, a different horn profile, weak general-horn evidence, resemblance to background, low spectral agreement, old-calibration/missing-window fallback, and selection of complete calibration windows. Repeat scoring checks cover the one-deduction-per-crossing cap, missing coverage, uncertain/unlocated events, sustained honks, the ten-second window, disabled deductions, and compatibility with old reports.
 
-- Microphone denial and retry UI.
-- The full background + three-honk calibration UI using **synthetic oscillator audio** delivered as a MediaStream into the real Web Audio analyser. Fingerprint extraction and spectral matching ran in Chromium; this did not use a physical microphone.
-- Calibration persistence across reload, followed by a real-audio-pipeline demo with the synthetic tone. The detector produced a likely-match event and End Trip stopped the stream tracks. The report reopened after reload.
-- Real-trip orchestration with a test position provider: duplicate Start clicks created one GPS watcher, a microphone interruption became visible, and End Trip cleared the watcher.
-- The complete 60-second scripted route using Playwright's virtual clock, both with and without GPS dropout. Clean demo: **1 point, 1 likely match, 1 review item, Near marked corner**. Dropout demo: **0 points**, first crossing **Unscored**, review retained. Latest report persisted in both cases.
-- Responsive overview rendering and local-only asset requests. A separate production smoke check exercised the built bundle rather than the Vite development server.
+New browser checks run the **actual bundled YAMNet model** and **actual AudioWorklet/Web Audio calibration pipeline**:
 
-The initial tests exposed a demo timing mismatch (the scripted horn began before the second confirmed entry) and zero-duration startup gaps affecting scoring. Both were corrected and the affected tests passed. A CSS build import and missing Node configuration types were also corrected before the successful build.
+1. Model integrity mismatch is rejected; genuine model inference returns 521 scores and 1,024 finite embedding values. Silence's top class is Silence. A generated, enveloped harmonic pulse produces road-horn evidence. All assets are requested from the app's origin; no external inference calls occur.
+2. Three synthetic pulses pass the real calibration UI and model, creating three personal AI fingerprints. The profile survives reload. A fresh pulse in microphone-demo mode passes through capture, model, personalized comparison, and the report. The report retains separate model/embedding/spectral scores after reload. End Trip stops the audio tracks.
+3. Blocking the model request gives visible **Spectral matching** fallback while microphone calibration remains usable.
+4. The scripted repeat-honk route yields +1 Garden crossing and −1 Library adjustment (net 0). Changing the preference leaves the saved trip unchanged. A new trip with deductions disabled retains the review pattern and yields 1 point.
 
-## Not yet measured
+Existing and new screenshots include the mobile AI report and desktop overview. Synthetic signals and simulated positions are test inputs, not a measured vehicle-recognition dataset. Cloud CPU inference timing is not an Android benchmark.
 
-- Horn detection accuracy, false-positive rate, and performance with a different horn, siren, noisy cabin, or fresh recordings.
-- Android Chrome microphone constraints, real GPS drift, battery use, interruptions by calls/lock screen, and real-world coverage recovery.
-- A published HTTPS deployment or restoration on another cloud task.
+## Still requires a physical Android device
 
-Use the physical Android checklist in `README.md`. The shipped detector is **Spectral matching**; YAMNet inference is not included. Browser and simulated checks establish implementation behavior, not real-world horn accuracy.
+Fresh recordings of the calibrated horn, different horns, sirens, cabin noise, device placement, GPS drift, lock/call interruptions, battery usage, and real-world false-positive/missed-event rates. Follow `README.md`'s phone checklist. Similar horns may match; neither AI nor a repeated pattern establishes who honked or whether it was necessary. Deployment to a public HTTPS host has not been performed.

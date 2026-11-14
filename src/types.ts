@@ -24,6 +24,12 @@ export interface Calibration {
   fingerprints: number[][];
   sampleLevels: number[];
   mode: "Spectral matching";
+  ai?: {
+    modelId: string;
+    embeddings: number[][];
+    background: number[];
+    hornScores: number[];
+  };
 }
 export interface Detection {
   start: number;
@@ -31,6 +37,15 @@ export interface Detection {
   match: number;
   label: "Likely your horn" | "Uncertain";
   simulated?: boolean;
+  detectorMode?: DetectorMode;
+  fallbackReason?: string;
+  ai?: {
+    hornScore: number;
+    embeddingMatch: number;
+    backgroundMatch: number;
+    spectralMatch: number;
+    inferenceMs: number;
+  };
 }
 export interface HornEvent extends Detection {
   id: string;
@@ -57,12 +72,14 @@ export interface ScoredCrossing extends Crossing {
   reasons: string[];
 }
 export type TripMode = "live" | "demo-mic" | "demo-scripted";
+export type DetectorMode = "Spectral matching" | "YAMNet + personal matching";
 export interface Trip {
   id: string;
   startedAt: number;
   endedAt?: number;
   mode: TripMode;
-  detector: "Spectral matching";
+  detector: DetectorMode;
+  repeatPenalty?: boolean;
   zones: Zone[];
   fixes: Fix[];
   events: HornEvent[];
@@ -72,4 +89,7 @@ export interface Trip {
 export interface Settings {
   matchThreshold: number;
   demoDropout: boolean;
+  aiEnabled?: boolean;
+  repeatPenalty?: boolean;
+  demoRepeats?: boolean;
 }

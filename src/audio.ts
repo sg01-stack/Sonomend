@@ -7,6 +7,13 @@ export class Microphone {
   private timer?: ReturnType<typeof setInterval>;
   private generation = 0;
   private lastAt = 0;
+  private worklet?: AudioWorkletNode;
+  private silentOutput?: GainNode;
+  get pcmAvailable() {
+    return !!this.worklet;
+  }
+  onPcm: (pcm: Float32Array, end: number) => void = () => {};
+  onPcmError: (reason: string) => void = () => {};
   onFrame: (frame: Frame) => void = () => {};
   onStatus: (ok: boolean, reason: string, at: number) => void = () => {};
   onGap: (start: number, end: number) => void = () => {};
@@ -18,7 +25,7 @@ export class Microphone {
         .some((t) => t.readyState === "live" && !t.muted)
     );
   }
-  async start() {
+  async start(withPcm = false) {
     this.stop();
     const generation = ++this.generation;
     if (!window.isSecureContext)
@@ -48,13 +55,48 @@ export class Microphone {
     }
     this.stream = stream;
     try {
-      this.context = new AudioContext();
+      this.context = new AudioContext({ sampleRate: 16000 });
       await this.context.resume();
       const analyser = this.context.createAnalyser();
       analyser.fftSize = 2048;
       analyser.smoothingTimeConstant = 0;
       this.source = this.context.createMediaStreamSource(stream);
       this.source.connect(analyser);
+      if (withPcm) {
+        try {
+          if (this.context.sampleRate !== 16000)
+            throw new Error("16 kHz audio is unavailable");
+          await this.context.audioWorklet.addModule(
+            `${import.meta.env.BASE_URL}pcm-worklet.js`,
+          );
+          if (generation !== this.generation || !this.context) return;
+          this.worklet = new AudioWorkletNode(this.context, "sonomend-pcm");
+          this.silentOutput = this.context.createGain();
+          this.silentOutput.gain.value = 0;
+          this.source
+            .connect(this.worklet)
+            .connect(this.silentOutput)
+            .connect(this.context.destination);
+          this.worklet.port.onmessage = ({ data }) => {
+            if (!this.context || document.hidden || !this.running) {
+              data.pcm.fill(0);
+              return;
+            }
+            const lag =
+              Math.max(0, this.context.currentTime - data.audioTime) * 1000;
+            if (lag > 1000) {
+              data.pcm.fill(0);
+              this.resetPcm();
+              return;
+            }
+            this.onPcm(data.pcm, Date.now() - lag);
+          };
+          this.worklet.onprocessorerror = () =>
+            this.onPcmError("AI audio capture stopped");
+        } catch {
+          this.onPcmError("AI audio capture unavailable in this browser");
+        }
+      }
       const time = new Float32Array(analyser.fftSize),
         freq = new Float32Array(analyser.frequencyBinCount);
       const sampleRate = this.context.sampleRate;
@@ -114,6 +156,14 @@ export class Microphone {
   }
   stop() {
     this.generation++;
+    if (this.worklet) {
+      this.worklet.port.onmessage = null;
+      this.worklet.port.postMessage("reset");
+      this.worklet.disconnect();
+      this.worklet = undefined;
+    }
+    this.silentOutput?.disconnect();
+    this.silentOutput = undefined;
     clearInterval(this.timer);
     this.timer = undefined;
     if (this.context) {
@@ -130,6 +180,9 @@ export class Microphone {
       t.stop();
     });
     this.stream = undefined;
+  }
+  resetPcm() {
+    this.worklet?.port.postMessage("reset");
   }
 }
 function microphoneError(error: unknown) {

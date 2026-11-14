@@ -1647,3 +1647,29 @@ input[type="file"] {
     scroll-behavior: auto !important;
   }
 }
+
+.ai-card {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  background: #edf3e4;
+}
+.ai-card h2 {
+  margin-bottom: 12px;
+}
+.ai-card p:not(.eyebrow),
+.ai-card small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.ai-card .eyebrow {
+  color: #627a49;
+}
+@media (max-width: 600px) {
+  .ai-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
