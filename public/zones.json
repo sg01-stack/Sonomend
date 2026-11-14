@@ -1,0 +1,26 @@
+[
+  {
+    "id": "garden",
+    "name": "Demo · Garden quiet zone",
+    "latitude": 12.9716,
+    "longitude": 77.5946,
+    "radius": 80,
+    "type": "quiet zone"
+  },
+  {
+    "id": "library",
+    "name": "Demo · Library quiet zone",
+    "latitude": 12.9716,
+    "longitude": 77.598,
+    "radius": 80,
+    "type": "quiet zone"
+  },
+  {
+    "id": "corner",
+    "name": "Demo · Marked corner",
+    "latitude": 12.9716,
+    "longitude": 77.5982,
+    "radius": 55,
+    "type": "marked corner"
+  }
+]
