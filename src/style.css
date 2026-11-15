@@ -1673,3 +1673,201 @@ input[type="file"] {
     gap: 12px;
   }
 }
+
+/* Navigation is a persistent view: map gestures and form input survive score updates. */
+.navigation-card {
+  margin: 22px 0;
+  padding: 22px;
+}
+.navigation-card .card-heading {
+  margin-bottom: 16px;
+}
+.navigation-card .eyebrow {
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.navigation-map {
+  width: 100%;
+  height: 360px;
+  border-radius: 12px;
+  isolation: isolate;
+  background-color: #e9eee5;
+  background-image:
+    linear-gradient(#cbd9c660 1px, transparent 1px),
+    linear-gradient(90deg, #cbd9c660 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.turn-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--ink);
+  color: white;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+  min-height: 85px;
+}
+.turn-symbol {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.map-wrap {
+  position: relative;
+}
+.map-score {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #f1f8e9;
+  box-shadow: 0 2px 10px #153c3220;
+  border: 1px solid #c7dbb8;
+  border-radius: 12px;
+  color: var(--ink);
+  pointer-events: none;
+}
+.map-score strong {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.map-score span {
+  font-size: 0.7rem;
+}
+.turn-card strong {
+  display: block;
+  font-size: 1.12rem;
+  line-height: 1.4;
+}
+.turn-card small {
+  display: block;
+  color: #cddac5;
+  margin-top: 6px;
+  font-size: 0.75rem;
+}
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.navigation-card .map-toolbar .button {
+  min-height: 44px;
+}
+.destination-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.destination-form label {
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.destination-form > div {
+  display: flex;
+  gap: 8px;
+}
+.destination-form input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--ink);
+  background: white;
+}
+.destination-form input:disabled {
+  background: #f3f5ee;
+}
+.destination-results {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+.destination-result {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f7f9f2;
+  padding: 13px;
+  text-align: left;
+  line-height: 1.5;
+}
+.destination-result:hover {
+  background: #eaf1e1;
+}
+.navigation-error {
+  font-size: 0.8rem;
+  color: #98613b;
+  margin: 10px 0;
+}
+.route-summary:not([hidden]) {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.navigation-disclaimer {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+#live-navigation ~ .live-main {
+  margin: 24px auto;
+}
+#live-navigation ~ .live-main .timer {
+  font-size: 3.4rem;
+  letter-spacing: -2px;
+}
+#live-navigation ~ .live-main .live-signal {
+  display: none;
+}
+.leaflet-tooltip {
+  font-family: inherit;
+  max-width: 220px;
+  white-space: normal;
+}
+@media (max-width: 600px) {
+  .navigation-card {
+    padding: 15px;
+    margin: 16px 0;
+  }
+  .navigation-map {
+    height: 310px;
+  }
+  .turn-card {
+    padding: 14px;
+    gap: 12px;
+  }
+  .turn-card strong {
+    font-size: 0.94rem;
+  }
+  .turn-card small {
+    font-size: 0.65rem;
+  }
+  .map-toolbar {
+    gap: 8px;
+  }
+  .map-toolbar [data-nav="gps"] {
+    font-size: 0.64rem;
+  }
+  .map-toolbar .button {
+    font-size: 0.69rem;
+    padding: 9px;
+  }
+  .destination-form > div {
+    flex-direction: column;
+  }
+  .destination-form input {
+    font-size: 16px;
+  }
+  .navigation-disclaimer {
+    font-size: 0.66rem;
+  }
+}

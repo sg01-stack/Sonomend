@@ -124,7 +124,7 @@ test("personal AI calibration, live capture and scored evidence survive reload",
     });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Calibrate my horn" }).click();
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await expect(
     page.getByText("AI ready · runs privately on this device", { exact: true }),
@@ -207,7 +207,7 @@ test("a failed model load keeps spectral calibration usable and clearly labeled"
     });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Calibrate my horn" }).click();
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await expect(page.getByText(/Using Spectral matching\./)).toBeVisible();
   await expect(

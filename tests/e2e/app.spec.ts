@@ -53,7 +53,7 @@ test("mobile overview is responsive and permission errors can be retried", async
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.getByRole("button", { name: "Calibrate my horn" }).click();
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.evaluate(() => ((window as any).testMicDenied = true));
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await expect(page.getByRole("alert")).toContainText("permission was denied");
@@ -69,7 +69,7 @@ test("calibrates through Web Audio, survives reload, starts and ends a real-mic 
 }) => {
   await audioHarness(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "Calibrate my horn" }).click();
+  await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await page.getByRole("button", { name: "Sample background · 2 sec" }).click();
   await expect(
@@ -205,7 +205,7 @@ test("desktop overview and production asset requests stay local", async ({
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: "Calibrate my horn" }),
+    page.getByRole("button", { name: "Calibration", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: "test-results/overview-desktop.png",

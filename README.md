@@ -1,6 +1,6 @@
 # Sonomend
 
-A mobile-first, on-device hackathon MVP: **Calibrate → Start Trip → End Trip → Trip Report**. Plain TypeScript, CSS, Vite, Web Audio, Geolocation, and IndexedDB. No backend, account, paid API, cloud inference, remote fonts, or external map tiles. All runtime assets are built locally.
+A mobile-first, on-device hackathon MVP: **Calibrate & Start → Navigate + earn points → End Trip → Trip Report**. Plain TypeScript, CSS, Vite, Web Audio, Geolocation, and IndexedDB. No backend, account, paid API, cloud inference, or remote fonts. Audio inference and app assets run locally; optional online navigation uses free public map services.
 
 ## Run
 
@@ -26,12 +26,30 @@ Browser tests use `/usr/bin/chromium` by default. Set `CHROMIUM_PATH` to your Ch
 ## Use the MVP
 
 1. Open the app over **HTTPS** on Android Chrome. Localhost is allowed for desktop development; an ordinary phone-to-laptop HTTP LAN URL is **not** a secure context for microphone access.
-2. While safely parked where brief honking is permitted, choose **Calibrate my horn** and enable the mic. Take a two-second background sample, then three separate three-second samples, honking once in each. Samples can be redone. Save calibration. Quiet/no-signal samples are rejected.
-3. Start a trip and allow location. Keep the app foregrounded and phone mounted. The app requests a screen wake lock where available but does not depend on it. Avoid interacting while driving.
+2. While safely parked where brief honking is permitted, choose **Calibrate & Start** and enable the mic. Take a two-second background sample, then three separate three-second samples, honking once in each. Samples can be redone. **Save & Start Trip** saves the fingerprints and immediately opens the trip with GPS navigation. Quiet/no-signal samples are rejected. The **Calibration** tab still supports saving without starting a trip.
+3. Allow location. On future trips, **Start a trip** uses the saved calibration. The map opens automatically with your position, quiet zones, route trace, horn markers, and points. Enable online maps and choose a destination while parked (details below). Keep the app foregrounded and phone mounted. The app requests a screen wake lock where available but does not depend on it. Avoid interacting while driving.
 4. End the trip to release microphone tracks, the audio context, GPS watcher, timers, and wake lock. The report is saved in IndexedDB. Reload and choose **View report**, or open **Trip history**.
-5. Export a report JSON if desired. Exports contain precise route locations; share deliberately. Nothing is uploaded automatically.
+5. Export a report JSON if desired. Exports contain precise route locations; share deliberately. Audio is never uploaded. Optional online maps share the location data described below.
 
 If permission is denied, enable it in browser site settings and use the retry button. A blocked mic prevents starting a microphone trip; unavailable GPS allows unlocated detections but cannot award affected quiet-crossing points. If local saving fails, the report stays in memory with retry and export controls. Do not reload until it is saved/exported.
+
+## Integrated GPS navigation
+
+Every trip opens a Leaflet map using the **same GPS watcher as scoring**. Your position, accuracy radius, fictional/custom quiet zones, trip trace and detected honks are local layers. The points badge stays beside the map. Old reports retain their local route sketches.
+
+For streets and a driving route, tap **Enable online map** and enter a place name or `latitude, longitude`, then choose a result. You can also tap a map point. These services need no API key or paid plan:
+
+- OpenStreetMap supplies street tiles, with visible contributor attribution.
+- Nominatim handles explicit place searches (no autocomplete). Requests are throttled and cached during the trip. Coordinates bypass geocoding.
+- The public OSRM driving service supplies the route and maneuver steps. The app advances on-screen instructions with GPS, shows approximate remaining distance/time, and follows your location. Panning pauses follow; **Recenter** resumes it. Three distinct fixes off-route trigger a reroute, at most once every 20 seconds.
+
+Online mode is opt-in for each trip: tiles reveal the viewed area, searches go to Nominatim, and origin/destination coordinates go to OSRM. **No audio or AI fingerprints are sent.** Disable online maps to stop new provider requests; an already loaded route remains visible. GPS loss, stale fixes or accuracy worse than 35 m pause guidance. Network failures show an error while audio monitoring and coverage-aware scoring continue. End Trip releases the map, GPS watcher, microphone and pending search/route requests.
+
+The scripted and microphone demos use a clearly labeled, locally generated navigation route. Street tiles are optional, so pitch rehearsal needs no map-provider connectivity.
+
+This is a **hackathon navigation prototype**: visual driving instructions, no voice prompts, live traffic, offline street packs, background navigation, lane guidance, or production availability guarantee. Public community/demo services may throttle or change; review their [tile](https://operations.osmfoundation.org/policies/tiles/), [search](https://operations.osmfoundation.org/policies/nominatim/) and [routing](https://github.com/Project-OSRM/osrm-backend/wiki/Api-usage-policy) policies before a wider release. Endpoints are centralized in `src/navigation/services.ts` for replacement. Foreground use and an HTTPS phone field test are still required before relying on directions on a road.
+
+In this managed cloud workspace, live requests to `tile.openstreetmap.org`, `nominatim.openstreetmap.org`, and `router.project-osrm.org` were blocked by the network policy. Those domains are saved in the environment configuration **draft** for review; the draft has not been published. The browser tests use representative mocked provider responses, not verified live service results. A public HTTPS deployment must allow those HTTPS endpoints in any network/CSP policy.
 
 ## Rehearse a 60-second demo
 
@@ -115,7 +133,7 @@ For GitHub Pages (free for a public repository):
 2. Use GitHub Pages' static artifact deployment to publish the contents of `dist` (the standard `actions/upload-pages-artifact` / `actions/deploy-pages` flow), or put those contents on a dedicated `gh-pages` branch and select that branch in **Settings → Pages**. Do not overwrite source files with build output.
 3. Enable HTTPS and test the resulting HTTPS site on Android Chrome. No SPA rewrite rule is needed because navigation stays in-page.
 
-Any free static HTTPS host that serves the same directory works. Deployment was **not** performed by this task. An installed offline PWA/service worker is not included: runtime requests are local to the deployed origin, but a first load/reload still needs the static files. Completed history/calibration survive reload on that origin; browser storage clearing, eviction, private mode, or changing origin can remove/isolate them. An active trip is in memory until ended, with a navigation warning; force-closing the browser can lose it.
+Any free static HTTPS host that serves the same directory works. Deployment was **not** performed by this task. An installed offline PWA/service worker is not included: app/model requests are local to the deployed origin, but a first load/reload still needs the static files. Online navigation additionally needs the map services. Completed history/calibration survive reload on that origin; browser storage clearing, eviction, private mode, or changing origin can remove/isolate them. An active trip is in memory until ended, with a navigation warning; force-closing the browser can lose it.
 
 ## Android test checklist — physical device still required
 
@@ -126,6 +144,7 @@ Any free static HTTPS host that serves the same directory works. Deployment was 
 - Rehearse the real-mic demo: clean Garden crossing, fresh horn playback at 44–46 seconds in Library, review item, and corner tag. If a distractor is loud enough, it may be uncertain or even match; document the result honestly.
 - Repeat with GPS dropout. Then switch apps/lock the screen during a crossing, take a call, or disconnect a microphone. Verify interruption status, resume controls, and no point for the affected crossing.
 - End the trip; verify Chrome's microphone indicator stops and GPS watcher ends. Reload and reopen the report. Confirm calibration and demo settings persist.
+- While parked, verify real map tiles, a place search and a driving route on the deployed HTTPS site. Test on-screen turn changes, rerouting, arrival, poor GPS and network loss on a supervised route; no live-provider road validation has been completed.
 - Check an actual stationary/slow outdoor route with local custom zones for GPS drift. Confirm unlocated events remain visible and boundary jitter does not repeatedly award points.
 
 ## Code map
@@ -140,7 +159,8 @@ Any free static HTTPS host that serves the same directory works. Deployment was 
 | `src/trip.ts`                  | Pure GPS coverage, crossings, contextual event tags, scoring               |
 | `src/storage.ts`               | IndexedDB calibration, settings, trip history, latest report               |
 | `src/demo.ts`                  | Deterministic positions and separately labeled synthetic audio             |
-| `src/route.ts`                 | Local SVG route sketch; does not bridge GPS gaps                           |
+| `src/route.ts`                 | Local SVG report sketch; does not bridge GPS gaps                          |
+| `src/navigation/`              | Persistent Leaflet map, manual search, driving routes, GPS guidance        |
 | `tests/`                       | Deterministic and browser checks                                           |
 
 See `VERIFICATION.md` for the checks actually run and their limits.

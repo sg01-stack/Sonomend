@@ -1,13 +1,13 @@
-# Verification — AI and repeated-honk update
+# Verification — navigation, AI and repeated honks
 
-Validated in this workspace on 14 November 2026 with Node 24.22.1 and Chromium 156. No physical phone or actual vehicle horn was available.
+Validated in this workspace on 15 November 2026 with Node 24.22.1 and Chromium 156. No physical phone or actual vehicle horn was available.
 
 ## Automated results
 
-- **34 logic/storage tests passed** across five files, with no failures or skips.
-- **9 Chromium browser tests passed**, with no failures or skips.
+- **42 logic/storage/navigation tests passed** across six files, with no failures or skips.
+- **12 Chromium browser tests passed**, with no failures or skips.
 - **Production build passed**, including TypeScript, model integrity verification, local worker bundling, and Vite.
-- **Built-app smoke check passed** on port 4173: actual local model inference, repeat-honk net score 0, saved report after reload, no browser errors/external requests, and no horizontal overflow at 390 px.
+- **Previous AI release built-app smoke check passed** on port 4173: actual local model inference, repeat-honk net score 0, saved report after reload, no browser errors/external requests, and no horizontal overflow at 390 px.
 
 The original detector, coverage, GPS, scoring, IndexedDB persistence, permission-retry, session cleanup, duplicate-start, and deterministic demo tests still pass.
 
@@ -21,6 +21,22 @@ New browser checks run the **actual bundled YAMNet model** and **actual AudioWor
 4. The scripted repeat-honk route yields +1 Garden crossing and −1 Library adjustment (net 0). Changing the preference leaves the saved trip unchanged. A new trip with deductions disabled retains the review pattern and yields 1 point.
 
 Existing and new screenshots include the mobile AI report and desktop overview. Synthetic signals and simulated positions are test inputs, not a measured vehicle-recognition dataset. Cloud CPU inference timing is not an Android benchmark.
+
+## Calibrate & Start and navigation
+
+The new calibration action saves the profile and automatically starts one live trip, reusing the microphone and the existing GPS watcher. A dedicated browser test captures real Web Audio samples with synthetic input, double-clicks Save & Start, verifies one GPS subscription and the map, ends the trip, and verifies saved calibration after reload.
+
+Routing logic checks cover coordinate parsing, provider geometry, upcoming turns (including a turn less than 10 m ahead), arrival, off-route distance, roundabouts, manual-search caching/throttling, provider rate limits, route coordinate order, and cancellation signals.
+
+The mobile browser tests use **mocked OpenStreetMap tiles, Nominatim search and OSRM routes**, with simulated GPS fixes. They verify:
+
+- No third-party map requests before per-trip online opt-in.
+- Destination search, route drawing, turn advancement, persistent map/input across score updates, and a visible net-points map badge.
+- Rerouting only after three distinct off-route fixes, GPS-loss pause, and sensor cleanup on End Trip.
+- A routing-service 503 leaves microphone monitoring active; a local navigation demo still yields the expected score without map-provider requests.
+- No horizontal overflow at 390 px; `test-results/navigation-mobile.png` captures the map and paused-GPS state.
+
+Live public-provider access is **not verified**: the managed environment proxy returned 403 for the three map hosts. The required domains are saved in the environment configuration draft for review, without publishing it. Directions are a foreground, visual hackathon prototype; real road guidance, traffic, provider uptime and production-scale use have not been validated.
 
 ## Still requires a physical Android device
 
