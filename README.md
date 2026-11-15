@@ -19,9 +19,12 @@ npm test            # deterministic detector, trip/scoring, and IndexedDB tests
 npm run build      # strict TypeScript check and static production bundle
 npm run preview    # serve dist on port 4173
 npm run test:e2e    # Chromium UI, Web Audio, permission, persistence, and demo checks
+npm run check       # unit tests + build + all browser checks against the built app
 ```
 
 Browser tests use `/usr/bin/chromium` by default. Set `CHROMIUM_PATH` to your Chrome/Chromium executable on another machine, or run `npx playwright install chromium` and set it to that installed executable. The browser test harness uses synthetic tones and simulated positions; it does not validate real-world detection accuracy. Test output and screenshots are in ignored `test-results/`.
+
+See [HACKATHON.md](HACKATHON.md) for the demo script, release handoff and remaining external setup.
 
 ## Use the MVP
 

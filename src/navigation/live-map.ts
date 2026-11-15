@@ -114,6 +114,7 @@ export class LiveNavigation {
     }
   }
   mount(host: HTMLElement) {
+    if (this.element.parentElement === host) return;
     host.append(this.element);
     if (!this.redraw) {
       this.redraw = true;

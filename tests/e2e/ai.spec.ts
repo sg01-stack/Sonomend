@@ -2,10 +2,12 @@ import { test, expect } from "@playwright/test";
 
 test("bundled model runs real inference, rejects tampering, and makes no external requests", async ({
   page,
+  baseURL,
 }) => {
   const foreign: string[] = [];
   page.on("request", (r) => {
-    if (!r.url().startsWith("http://127.0.0.1:5173")) foreign.push(r.url());
+    if (new URL(r.url()).origin !== new URL(baseURL!).origin)
+      foreign.push(r.url());
   });
   await page.goto("/");
   const result = await page.evaluate(async () => {
@@ -75,12 +77,10 @@ test("bundled model runs real inference, rejects tampering, and makes no externa
   expect(result.embeddingLength).toBe(1024);
   expect(result.finite).toBe(true);
   expect(foreign).toEqual([]);
-  test
-    .info()
-    .annotations.push({
-      type: "synthetic-signal inference time",
-      description: `${result.inferenceMs.toFixed(1)} ms on cloud Chromium; not an Android benchmark`,
-    });
+  test.info().annotations.push({
+    type: "synthetic-signal inference time",
+    description: `${result.inferenceMs.toFixed(1)} ms on cloud Chromium; not an Android benchmark`,
+  });
 });
 
 test("personal AI calibration, live capture and scored evidence survive reload", async ({

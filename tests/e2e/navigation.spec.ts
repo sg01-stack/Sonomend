@@ -215,10 +215,20 @@ test("online navigation searches, advances turns, retains inputs, reroutes and p
   expect(mapRequests).toHaveLength(0);
   await page.getByRole("button", { name: "Enable online map" }).click();
   await page.getByLabel("Where to?").fill("Library");
-  await page.evaluate(
-    () =>
-      ((window as any).originalMap = document.querySelector(".navigation-map")),
-  );
+  await page.evaluate(() => {
+    const state = window as any;
+    state.originalMap = document.querySelector(".navigation-map");
+    state.mapDetachments = 0;
+    state.mapObserver = new MutationObserver((records) => {
+      for (const record of records)
+        for (const node of record.removedNodes)
+          if (node.contains(state.originalMap)) state.mapDetachments++;
+    });
+    state.mapObserver.observe(document.querySelector("#app"), {
+      childList: true,
+      subtree: true,
+    });
+  });
   await page.waitForTimeout(1200);
   await expect(page.getByLabel("Where to?")).toHaveValue("Library");
   expect(
@@ -228,6 +238,9 @@ test("online navigation searches, advances turns, retains inputs, reroutes and p
         document.querySelector(".navigation-map"),
     ),
   ).toBe(true);
+  await expect(page.getByLabel("Where to?")).toBeFocused();
+  expect(await page.evaluate(() => (window as any).mapDetachments)).toBe(0);
+  await page.evaluate(() => (window as any).mapObserver.disconnect());
   await page.getByRole("button", { name: "Find destination" }).click();
   await page
     .getByRole("button", { name: "Demo destination, Bengaluru" })
@@ -308,4 +321,62 @@ test("routing failure keeps trip scoring alive and local demo maps require no ne
   await page.clock.runFor(61000);
   await expect(page.locator(".points-badge strong")).toHaveText("1");
   expect(remote).toHaveLength(0);
+});
+
+test("stale and inaccurate GPS pause guidance until a fresh accurate fix arrives", async ({
+  page,
+}) => {
+  await devices(page);
+  await mapProviders(page);
+  let routeRequests = 0;
+  await page.route("https://router.project-osrm.org/**", (route) => {
+    routeRequests++;
+    return route.fulfill({ json: routeData() });
+  });
+  await seed(page);
+  await page.clock.install();
+  await page.getByRole("button", { name: "Start a trip" }).click();
+  await page.getByRole("button", { name: "Enable online map" }).click();
+  await page.getByLabel("Where to?").fill("12.9736,77.598");
+  await page.getByRole("button", { name: "Find destination" }).click();
+  await page.getByRole("button", { name: "12.97360, 77.59800" }).click();
+  await expect(page.locator("[data-nav=instruction]")).toHaveText(
+    "Turn left onto Garden Road",
+  );
+  await page.clock.runFor(6000);
+  await expect(page.locator("[data-nav=instruction]")).toHaveText(
+    "GPS unavailable · directions paused",
+  );
+  await page.getByRole("button", { name: "Find destination" }).click();
+  await page.getByRole("button", { name: "12.97360, 77.59800" }).click();
+  await expect(page.locator(".navigation-error")).toContainText(
+    "fresh, accurate GPS",
+  );
+  expect(routeRequests).toBe(1);
+  await page.evaluate(() =>
+    (window as any).fix({
+      timestamp: Date.now(),
+      coords: { latitude: 12.9736, longitude: 77.598, accuracy: 80 },
+    }),
+  );
+  await page.clock.runFor(1000);
+  await expect(page.locator("[data-nav=instruction]")).toHaveText(
+    "GPS unavailable · directions paused",
+  );
+  await page.evaluate(() =>
+    (window as any).fix({
+      timestamp: Date.now(),
+      coords: { latitude: 12.9736, longitude: 77.598, accuracy: 5 },
+    }),
+  );
+  await page.clock.runFor(1000);
+  await expect(page.locator("[data-nav=instruction]")).toHaveText(
+    "You have arrived",
+  );
+  await expect(page.locator("[data-nav=points]")).toHaveText("0");
+  await page.getByRole("button", { name: "End trip & see report" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your trip report." }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => (window as any).gpsStops)).toBe(1);
 });

@@ -5,9 +5,9 @@ Validated in this workspace on 15 November 2026 with Node 24.22.1 and Chromium 1
 ## Automated results
 
 - **42 logic/storage/navigation tests passed** across six files, with no failures or skips.
-- **12 Chromium browser tests passed**, with no failures or skips.
+- **13 Chromium browser tests passed against the production build**, with no failures or skips.
 - **Production build passed**, including TypeScript, model integrity verification, local worker bundling, and Vite.
-- **Previous AI release built-app smoke check passed** on port 4173: actual local model inference, repeat-honk net score 0, saved report after reload, no browser errors/external requests, and no horizontal overflow at 390 px.
+- **Release check passed** via `npm run check`: unit tests, strict build and the full browser suite on a fresh production preview server at port 4173. The bundled model, calibration, scoring, navigation and persistence are exercised using the exact static files intended for deployment.
 
 The original detector, coverage, GPS, scoring, IndexedDB persistence, permission-retry, session cleanup, duplicate-start, and deterministic demo tests still pass.
 
@@ -31,8 +31,8 @@ Routing logic checks cover coordinate parsing, provider geometry, upcoming turns
 The mobile browser tests use **mocked OpenStreetMap tiles, Nominatim search and OSRM routes**, with simulated GPS fixes. They verify:
 
 - No third-party map requests before per-trip online opt-in.
-- Destination search, route drawing, turn advancement, persistent map/input across score updates, and a visible net-points map badge.
-- Rerouting only after three distinct off-route fixes, GPS-loss pause, and sensor cleanup on End Trip.
+- Destination search, route drawing, turn advancement, persistent map/input across score updates, and a visible net-points map badge. A DOM-observer regression assertion first reproduced the map being detached during refresh; it passes after the renderer was changed to keep the map continuously mounted, preserving input focus.
+- Rerouting only after three distinct off-route fixes, GPS-loss pause, and sensor cleanup on End Trip. A separate test simulates fixes going stale, rejects new routes until GPS recovers, keeps directions paused for 80 m accuracy, and resumes to arrival with a fresh 5 m fix. Missing coverage yields no quiet-crossing point.
 - A routing-service 503 leaves microphone monitoring active; a local navigation demo still yields the expected score without map-provider requests.
 - No horizontal overflow at 390 px; `test-results/navigation-mobile.png` captures the map and paused-GPS state.
 

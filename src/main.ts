@@ -113,15 +113,7 @@ const button = (
   `<button class="button ${kind}" data-action="${action}" ${disabled ? "disabled" : ""}>${label}</button>`;
 
 function shell(content: string) {
-  const focused = navigation?.element.contains(document.activeElement)
-    ? (document.activeElement as HTMLElement)
-    : null;
-  const selection =
-    focused instanceof HTMLInputElement
-      ? [focused.selectionStart, focused.selectionEnd]
-      : null;
-  navigation?.element.remove();
-  app.innerHTML = `<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
+  const markup = `<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
     ["home", "Overview", "home"],
     ["calibrate", "Calibration", "mic"],
     ["history", "Trip history", "history"],
@@ -133,6 +125,31 @@ function shell(content: string) {
     .join(
       "",
     )}</nav><span class="local-badge">${icon("shield")} Audio stays on-device</span></header><main>${error ? `<div role="alert" class="message error">${icon("alert")}<span>${esc(error)}</span>${button("Dismiss", "dismiss", "text-button")}</div>` : ""}${notice ? `<div role="status" class="message">${esc(notice)}</div>` : ""}${content}</main><footer><span>Small signals. More mindful journeys.</span><span>Built for awareness, not judgment.</span></footer>`;
+  const liveHost =
+    page === "live" && navigation?.element.isConnected
+      ? app.querySelector<HTMLElement>("#live-navigation")
+      : null;
+  if (liveHost) {
+    // Keep the map, focused input and active touch gestures connected during ticks.
+    const next = document.createElement("template");
+    next.innerHTML = markup;
+    const nextMain = next.content.querySelector("main")!;
+    const nextHost = nextMain.querySelector("#live-navigation")!;
+    const main = liveHost.parentElement!;
+    while (liveHost.previousSibling) liveHost.previousSibling.remove();
+    while (liveHost.nextSibling) liveHost.nextSibling.remove();
+    while (nextMain.firstChild !== nextHost)
+      main.insertBefore(nextMain.firstChild!, liveHost);
+    while (nextHost.nextSibling) main.append(nextHost.nextSibling);
+    app
+      .querySelector("header")!
+      .replaceWith(next.content.querySelector("header")!);
+    app
+      .querySelector("footer")!
+      .replaceWith(next.content.querySelector("footer")!);
+  } else {
+    app.innerHTML = markup;
+  }
   app.querySelectorAll<HTMLElement>("[data-action]").forEach((el) =>
     el.addEventListener("click", (e) => {
       e.preventDefault();
@@ -204,11 +221,6 @@ function shell(content: string) {
     const host = app.querySelector<HTMLElement>("#live-navigation")!;
     navigation.mount(host);
     navigation.update(engine.trip, engine.available("gps"), Date.now());
-    if (focused?.isConnected) {
-      focused.focus({ preventScroll: true });
-      if (selection && focused instanceof HTMLInputElement)
-        focused.setSelectionRange(selection[0], selection[1]);
-    }
   }
   updateMeter();
 }

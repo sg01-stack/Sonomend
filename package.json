@@ -9,6 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:production": "playwright test --config=playwright.production.config.ts",
+    "check": "npm test && npm run build && npm run test:production",
     "format": "prettier --write src tests public/zones.json *.ts *.json *.html *.md",
     "prepare:ai": "node scripts/prepare-ai.mjs",
     "predev": "npm run prepare:ai",

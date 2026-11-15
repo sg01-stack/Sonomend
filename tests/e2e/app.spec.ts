@@ -197,10 +197,12 @@ for (const dropout of [false, true])
 
 test("desktop overview and production asset requests stay local", async ({
   page,
+  baseURL,
 }) => {
   const foreign: string[] = [];
   page.on("request", (r) => {
-    if (!r.url().startsWith("http://127.0.0.1:5173")) foreign.push(r.url());
+    if (new URL(r.url()).origin !== new URL(baseURL!).origin)
+      foreign.push(r.url());
   });
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto("/");
