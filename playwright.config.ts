@@ -8,7 +8,11 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:5173",
     viewport: { width: 390, height: 844 },
     launchOptions: {
-      executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
+      executablePath:
+        process.env.CHROMIUM_PATH ||
+        (process.platform === "win32"
+          ? "C:/Program Files/Google/Chrome/Application/chrome.exe"
+          : "/usr/bin/chromium"),
       args: ["--no-sandbox"],
     },
     trace: "retain-on-failure",

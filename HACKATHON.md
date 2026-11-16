@@ -10,7 +10,7 @@ npm run check
 npm run dev
 ```
 
-`npm run check` runs logic/storage tests, builds the static app and runs the complete browser suite against that production build. `npm run preview` serves the built app at `http://localhost:4173`. A phone needs an HTTPS deployment for microphone/location access.
+`npm run check` runs logic/storage tests, Node API/adapter tests, builds the static app and runs the complete browser suite against that production build on a temporary local port. `npm run preview` serves the built app at `http://localhost:4173`. A phone needs an HTTPS deployment for microphone/location access.
 
 The deployable bundle contains the contents of `dist/`, including the model, WASM runtime, licenses, zones and assets. Extract it to a free static HTTPS host. Opening `index.html` directly with `file://` will not work. No API key or server is required for this release.
 
@@ -32,7 +32,7 @@ Enable online maps to get streets, search for a destination or enter `latitude, 
 
 ## Release boundaries
 
-- Navigation is a foreground visual prototype with no live traffic, voice directions or offline street maps. Public map-provider responses were simulated in automated checks because this cloud environment blocks those hosts. The three required domains are saved in the environment configuration draft, not applied or published. Review/save those settings and publish when you choose to enable them here.
-- No public website was deployed. Physical Android testing and actual map-provider connectivity are still outstanding; see `README.md` and `VERIFICATION.md`.
-- The earlier optional hosted-AI add-on is not included: all sound AI in this release runs on-device. No free-tier provider credentials are configured.
+- Navigation is a foreground visual prototype with no live traffic, voice directions or offline street maps. Controlled browser regressions and separate live desktop-browser tile/search/route requests passed on 17 November 2026. Road guidance still requires physical testing.
+- No public website was deployed. Physical Android testing is still outstanding; see `README.md` and `VERIFICATION.md`.
+- Optional manual hosted sound check is implemented and tested with controlled responses, disabled by default. No eligible provider project/model/key is configured or live-tested. See HOSTED_AI.md.
 - Custom Figma/Blender assets have not been supplied. For that visual pass, provide a Figma file or shareable design link and the Blender `.blend` file or a web-ready `.glb` export, including any required textures.

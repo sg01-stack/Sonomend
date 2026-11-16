@@ -7,4 +7,4 @@
 - **Leaflet 1.9.4**: Vladimir Agafonkin and contributors, BSD 2-Clause. Source: https://github.com/Leaflet/Leaflet. License is distributed in `public/licenses/leaflet.txt` (and the built site).
 - **Optional online maps**: OpenStreetMap contributors supply map data under the ODbL; tile attribution links to https://www.openstreetmap.org/copyright. Nominatim and OSRM are external search/routing services, subject to their public usage policies.
 
-No remote inference provider, paid API, or hosted model account is used. Original third-party authors do not endorse Sonomend or its similarity/scoring thresholds.
+The core on-device pipeline uses no remote inference provider. Optional manual sound checks use Google Gemini only when the host is configured and the user consents. See https://ai.google.dev/gemini-api/terms and HOSTED_AI.md; unpaid service data may be used for product improvement and human review. No Google SDK or model weights are bundled for this optional service. Original third-party authors do not endorse Sonomend or its similarity/scoring thresholds.

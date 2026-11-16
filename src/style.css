@@ -1871,3 +1871,22 @@ input[type="file"] {
     font-size: 0.66rem;
   }
 }
+
+#sound-check audio {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  margin: 1rem 0;
+}
+#sound-check audio[hidden] {
+  display: none;
+}
+#sound-check .checkbox {
+  margin: 1rem 0;
+}
+#sound-check button {
+  margin: 0.3rem;
+}
+#sound-check p {
+  overflow-wrap: anywhere;
+}

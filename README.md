@@ -1,6 +1,6 @@
 # Sonomend
 
-A mobile-first, on-device hackathon MVP: **Calibrate & Start → Navigate + earn points → End Trip → Trip Report**. Plain TypeScript, CSS, Vite, Web Audio, Geolocation, and IndexedDB. No backend, account, paid API, cloud inference, or remote fonts. Audio inference and app assets run locally; optional online navigation uses free public map services.
+A mobile-first, on-device hackathon MVP: **Calibrate & Start → Navigate + earn points → End Trip → Trip Report**. Plain TypeScript, CSS, Vite, Web Audio, Geolocation, and IndexedDB. The core needs no backend, account, paid API, cloud inference, or remote fonts. A separate optional hosted sound check is disabled by default. Audio inference and app assets run locally; optional online navigation uses free public map services.
 
 ## Run
 
@@ -22,7 +22,7 @@ npm run test:e2e    # Chromium UI, Web Audio, permission, persistence, and demo 
 npm run check       # unit tests + build + all browser checks against the built app
 ```
 
-Browser tests use `/usr/bin/chromium` by default. Set `CHROMIUM_PATH` to your Chrome/Chromium executable on another machine, or run `npx playwright install chromium` and set it to that installed executable. The browser test harness uses synthetic tones and simulated positions; it does not validate real-world detection accuracy. Test output and screenshots are in ignored `test-results/`.
+Browser tests use `/usr/bin/chromium` by default. On Windows the default is Chrome under Program Files. Set `CHROMIUM_PATH` to your Chrome/Chromium executable on another machine, or run `npx playwright install chromium` and set it to that installed executable. The browser test harness uses synthetic tones and simulated positions; it does not validate real-world detection accuracy. Test output and screenshots are in ignored `test-results/`.
 
 See [HACKATHON.md](HACKATHON.md) for the demo script, release handoff and remaining external setup.
 
@@ -32,7 +32,7 @@ See [HACKATHON.md](HACKATHON.md) for the demo script, release handoff and remain
 2. While safely parked where brief honking is permitted, choose **Calibrate & Start** and enable the mic. Take a two-second background sample, then three separate three-second samples, honking once in each. Samples can be redone. **Save & Start Trip** saves the fingerprints and immediately opens the trip with GPS navigation. Quiet/no-signal samples are rejected. The **Calibration** tab still supports saving without starting a trip.
 3. Allow location. On future trips, **Start a trip** uses the saved calibration. The map opens automatically with your position, quiet zones, route trace, horn markers, and points. Enable online maps and choose a destination while parked (details below). Keep the app foregrounded and phone mounted. The app requests a screen wake lock where available but does not depend on it. Avoid interacting while driving.
 4. End the trip to release microphone tracks, the audio context, GPS watcher, timers, and wake lock. The report is saved in IndexedDB. Reload and choose **View report**, or open **Trip history**.
-5. Export a report JSON if desired. Exports contain precise route locations; share deliberately. Audio is never uploaded. Optional online maps share the location data described below.
+5. Export a report JSON if desired. Exports contain precise route locations; share deliberately. Trip/calibration audio is never uploaded; the optional sound-check page can upload a separate clip after explicit consent. Optional online maps share the location data described below.
 
 If permission is denied, enable it in browser site settings and use the retry button. A blocked mic prevents starting a microphone trip; unavailable GPS allows unlocated detections but cannot award affected quiet-crossing points. If local saving fails, the report stays in memory with retry and export controls. Do not reload until it is saved/exported.
 
@@ -52,7 +52,7 @@ The scripted and microphone demos use a clearly labeled, locally generated navig
 
 This is a **hackathon navigation prototype**: visual driving instructions, no voice prompts, live traffic, offline street packs, background navigation, lane guidance, or production availability guarantee. Public community/demo services may throttle or change; review their [tile](https://operations.osmfoundation.org/policies/tiles/), [search](https://operations.osmfoundation.org/policies/nominatim/) and [routing](https://github.com/Project-OSRM/osrm-backend/wiki/Api-usage-policy) policies before a wider release. Endpoints are centralized in `src/navigation/services.ts` for replacement. Foreground use and an HTTPS phone field test are still required before relying on directions on a road.
 
-In this managed cloud workspace, live requests to `tile.openstreetmap.org`, `nominatim.openstreetmap.org`, and `router.project-osrm.org` were blocked by the network policy. Those domains are saved in the environment configuration **draft** for review; the draft has not been published. The browser tests use representative mocked provider responses, not verified live service results. A public HTTPS deployment must allow those HTTPS endpoints in any network/CSP policy.
+Live desktop-browser requests from localhost on 17 November 2026 returned HTTP 200 for OpenStreetMap tiles and Nominatim search, and HTTP 200 / code Ok for OSRM routing. Regression tests still use controlled provider responses. These checks do not establish physical-phone GPS or real-road correctness.
 
 ## Rehearse a 60-second demo
 
@@ -72,7 +72,7 @@ Enable **Simulate GPS dropout in first zone** to drop positions at 13–19 secon
 
 ## Free on-device AI + your personal fingerprint
 
-The default is **YAMNet + personal matching**, with **Spectral matching** retained as a working fallback. Enable **Use free on-device AI** on the overview and recalibrate to create a private AI profile. Existing spectral calibrations and old reports remain compatible. There are no API keys, paid requests, accounts, cloud inference, or third-party runtime downloads. Model weights, worker code, and WASM are served from your static host. The complete static build is about 13 MB, including a 4.1 MB quantized model.
+The default is **YAMNet + personal matching**, with **Spectral matching** retained as a working fallback. Enable **Use free on-device AI** on the overview and recalibrate to create a private AI profile. Existing spectral calibrations and old reports remain compatible. The on-device pipeline needs no API keys, paid requests, accounts, cloud inference, or third-party runtime downloads. Model weights, worker code, and WASM are served from your static host. The complete static build is about 13 MB, including a 4.1 MB quantized model.
 
 The app combines three checks instead of choosing one:
 
@@ -167,3 +167,7 @@ Any free static HTTPS host that serves the same directory works. Deployment was 
 | `tests/`                       | Deterministic and browser checks                                           |
 
 See `VERIFICATION.md` for the checks actually run and their limits.
+
+## Optional parked sound check
+
+Overview → Open optional sound check records a separate three-second WAV, allows local playback, and uploads only after explicit per-send consent. Clearing, hiding or leaving the page releases the microphone and clears the clip. It never changes calibration, events or points. Static hosts safely show the feature as unavailable. See [HOSTED_AI.md](HOSTED_AI.md) for server setup, privacy, limits and current verification.

@@ -6,3 +6,10 @@ playwright-report/
 .DS_Store
 public/ai-runtime/
 public/models/yamnet.json
+
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+.wrangler/

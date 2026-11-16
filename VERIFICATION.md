@@ -1,3 +1,20 @@
+# Continuation verification — 17 November 2026
+
+The tested continuation was merged into the clean GitHub Desktop clone on 17 November 2026. Its local main and cached origin/main both pointed to 8fe12ed89a6a421b99b4cf7cc8874cecbdd8b68d. A fresh remote check remains blocked by command-line authentication. Prior results below remain historical.
+
+- 43 Vitest tests pass across seven files.
+- 11 Node API/adapter tests pass, covering WAV validation, consent/origins, streaming body limits, cancellation, quota/concurrency behavior, model errors, reverse-proxy origin, static containment and Worker routing. Provider responses are controlled test data.
+- 17 production Chromium browser assertions pass, including four new sound-check tests: disabled host, actual Web Audio/AudioWorklet recording, consent gating, safe rendering, track cleanup, late permission, quota errors, and mobile width. No Google credential-backed inference or physical vehicle testing.
+- Strict TypeScript, verified YAMNet preparation and Vite build pass.
+- Wrangler 4.163.0 deployment dry run passes; no deployment occurred.
+- Live desktop-browser fetches to tile/search/routing providers returned HTTP 200; OSRM returned code Ok. This is connectivity/CORS evidence from localhost, not physical-road validation.
+
+The original Windows test process hung during server teardown after passing assertions. The production runner now owns its Node server directly on an available port, avoiding shell-based process-tree cleanup. The full check was rerun using that runner.
+
+No public deployment, Git push, environment publication, Figma/Blender integration or real Google request is claimed. The desktop clone retains its Git history. The continuation has been merged locally; a successful authenticated remote comparison and push are still required before claiming GitHub sync.
+
+---
+
 # Verification — navigation, AI and repeated honks
 
 Validated in this workspace on 15 November 2026 with Node 24.22.1 and Chromium 156. No physical phone or actual vehicle horn was available.
@@ -36,7 +53,7 @@ The mobile browser tests use **mocked OpenStreetMap tiles, Nominatim search and 
 - A routing-service 503 leaves microphone monitoring active; a local navigation demo still yields the expected score without map-provider requests.
 - No horizontal overflow at 390 px; `test-results/navigation-mobile.png` captures the map and paused-GPS state.
 
-Live public-provider access is **not verified**: the managed environment proxy returned 403 for the three map hosts. The required domains are saved in the environment configuration draft for review, without publishing it. Directions are a foreground, visual hackathon prototype; real road guidance, traffic, provider uptime and production-scale use have not been validated.
+Live provider follow-up, 17 November 2026: desktop Chrome fetches from localhost succeeded for a world tile (HTTP 200), a single Bengaluru search (HTTP 200, one result), and a route between demo coordinates (HTTP 200, code Ok). This verifies browser connectivity/CORS, not physical GPS or road guidance.
 
 ## Still requires a physical Android device
 

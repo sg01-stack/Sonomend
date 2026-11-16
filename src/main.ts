@@ -1,4 +1,6 @@
 import "./style.css";
+import { mountSoundCheck } from "./hosted/page";
+let disposeSoundCheck: (() => void) | undefined;
 import { Microphone } from "./audio";
 import { fingerprint, SpectralDetector } from "./detector";
 import { HornAi } from "./ai/client";
@@ -36,7 +38,8 @@ const detectorName = () =>
   aiEnabled() && personalized()
     ? "YAMNet + personal matching"
     : "Spectral matching";
-let page: "home" | "calibrate" | "live" | "report" | "history" = "home";
+let page: "hosted" | "home" | "calibrate" | "live" | "report" | "history" =
+  "home";
 let calibration: Calibration | undefined,
   latest: Trip | undefined,
   report: Trip | undefined;
@@ -124,7 +127,7 @@ function shell(content: string) {
     )
     .join(
       "",
-    )}</nav><span class="local-badge">${icon("shield")} Audio stays on-device</span></header><main>${error ? `<div role="alert" class="message error">${icon("alert")}<span>${esc(error)}</span>${button("Dismiss", "dismiss", "text-button")}</div>` : ""}${notice ? `<div role="status" class="message">${esc(notice)}</div>` : ""}${content}</main><footer><span>Small signals. More mindful journeys.</span><span>Built for awareness, not judgment.</span></footer>`;
+    )}</nav><span class="local-badge">${icon("shield")} Trip audio stays on-device</span></header><main>${error ? `<div role="alert" class="message error">${icon("alert")}<span>${esc(error)}</span>${button("Dismiss", "dismiss", "text-button")}</div>` : ""}${notice ? `<div role="status" class="message">${esc(notice)}</div>` : ""}${content}</main><footer><span>Small signals. More mindful journeys.</span><span>Built for awareness, not judgment.</span></footer>`;
   const liveHost =
     page === "live" && navigation?.element.isConnected
       ? app.querySelector<HTMLElement>("#live-navigation")
@@ -225,6 +228,15 @@ function shell(content: string) {
   updateMeter();
 }
 function render() {
+  disposeSoundCheck?.();
+  disposeSoundCheck = undefined;
+  if (page === "hosted") {
+    shell('<div id="sound-check"></div>');
+    disposeSoundCheck = mountSoundCheck(
+      app.querySelector<HTMLElement>("#sound-check")!,
+    );
+    return;
+  }
   shell(
     page === "home"
       ? home()
@@ -244,7 +256,7 @@ function home() {
   <section class="setup-grid"><article class="card calibration-card"><div class="card-heading"><span class="icon-tile">${icon("mic")}</span><span class="pill ${calibration ? "success" : ""}">${calibration ? "Calibrated" : "Step 01"}</span></div><h3>${calibration ? "Your horn, recognized." : "Your horn, your baseline."}</h3><p>${calibration ? `Three fingerprints saved on ${date(calibration.createdAt)}. Recalibrate if your vehicle, phone, or mic position changes.` : "While safely parked, capture the background and three short honks. About 30 seconds to get started."}</p>${button(`${calibration ? "Recalibrate & Start" : "Calibrate & Start"} ${icon("arrow")}`, "calibrate-start", "outline", busy)}</article><article class="card how-card"><p class="eyebrow">THE JOURNEY</p><ol class="steps"><li><span>01</span><div><strong>Calibrate</strong><small>Give your horn a local fingerprint.</small></div></li><li><span>02</span><div><strong>Take a trip</strong><small>Keep the app visible. Let it listen.</small></div></li><li><span>03</span><div><strong>Look back</strong><small>See detections, context, and quiet crossings.</small></div></li></ol></article></section>
   <section class="latest-section"><div class="section-title"><h2>Your last journey</h2>${latest ? button("View report " + icon("arrow"), "latest", "text-button") : ""}</div><div class="stats-grid"><div class="stat"><span>Likely your horn</span><strong>${latest ? latest.events.filter((e) => e.label === "Likely your horn").length : "—"}</strong><small>Matches, not proof of ownership</small></div><div class="stat"><span>Quiet crossings</span><strong>${latest ? totals.filter((c) => c.outcome === "Point earned").length : "—"}</strong><small>Complete, with clear coverage</small></div><div class="stat accent"><span>Net points</span><strong>${latest ? scoreTrip(latest).totalPoints : "—"}<span>${icon("leaf")}</span></strong><small>${latest ? date(latest.startedAt) : "Your first journey starts here"}</small></div></div></section>
   <section class="card ai-card"><div><p class="eyebrow">FREE · PRIVATE · PERSONAL</p><h2>Your horn, with a second check.</h2><p>YAMNet checks for horn-like sounds. Your three private sound fingerprints help decide whether the sound resembles your vehicle. Similar horns can still match.</p><small>${personalized() ? "Your personal AI fingerprint is saved on this device." : "Recalibrate with AI enabled to create your personal AI fingerprint. Existing calibration still works in Spectral matching."}</small></div><label class="checkbox"><input id="ai-enabled" type="checkbox" ${aiEnabled() ? "checked" : ""}> Use free on-device AI</label><label class="checkbox"><input id="repeat-penalty" type="checkbox" ${settings.repeatPenalty !== false ? "checked" : ""}> Apply repeat-honk deductions</label><small>Three separate likely matches within 10 seconds in a complete quiet-zone crossing deduct one point, at most once per crossing. Missing coverage prevents deductions. A review rule, not proof of unnecessary honking.</small></section><section class="card demo-card"><div><span class="eyebrow">TRY IT BEFORE THE ROAD</span><h2>A short route. A real rehearsal.</h2><p>60 seconds through two <strong>demo quiet zones</strong> and a marked corner. Simulated GPS; real microphone by default.</p></div><div class="demo-controls"><label for="demo-audio">Demo audio</label><select id="demo-audio"><option value="mic" ${demoAudio === "mic" ? "selected" : ""}>Real microphone (calibration required)</option><option value="scripted" ${demoAudio === "scripted" ? "selected" : ""}>Simulated audio · deterministic test</option></select><label class="checkbox"><input type="checkbox" id="dropout" ${settings.demoDropout ? "checked" : ""}> Simulate GPS dropout in first zone</label><label class="checkbox"><input type="checkbox" id="demo-repeats" ${settings.demoRepeats ? "checked" : ""} ${demoAudio !== "scripted" ? "disabled" : ""}> Simulate three separate honks (scripted audio)</label>${button(`${icon("play")} Start demo trip`, "demo", "outline", busy || !zoneReady || (demoAudio === "mic" && !calibration))}<small>${demoAudio === "mic" ? "Stay quiet in Garden; play your calibrated horn in Library." : "Clearly labeled test inputs. No microphone or real GPS used."}</small></div></section>
-  <section class="privacy-strip">${icon("shield")}<div><strong>Your audio stays on your device.</strong><p>Audio is processed and discarded. Fingerprints and trips stay in IndexedDB. Optional online navigation shares map areas and route coordinates with map providers. Audio is never uploaded.</p></div></section><details class="details"><summary>Permissions, demo zones & limitations</summary><p>Use HTTPS on your phone and allow microphone and location access. Keep the app visible and your phone mounted; do not interact while driving. Only calibrate where it is safe and permitted.</p><p>Spectral matching compares sound fingerprints. Similar horns, sirens, and other loud sounds can match. A match score is not the probability that you honked. Quiet points are a local reflection tool, not a measure of driving safety.</p><p>Bundled zones are fictional demo markers in Bengaluru, not official restrictions or inferred corners. Real trips use these markers unless you load your own zone JSON. Edit <code>public/zones.json</code> before deployment or load a file below for this session.</p><label class="file-label">Load local zones (.json)<input id="zones-file" type="file" accept=".json,application/json"></label><p>${zones.length} zones loaded. GPS must be ≤ ${MAX_ACCURACY} m accuracy and ≤ 5 seconds old. Missing coverage cannot earn points.</p></details>`;
+  <section class="card"><p class="eyebrow">OPTIONAL · PARKED ONLY</p><h2>A separate sound check</h2><p>Record and preview a short clip, then choose whether to send it to Google Gemini for general horn evidence. No trip scoring changes.</p>${button("Open optional sound check", "hosted", "outline")}</section><section class="privacy-strip">${icon("shield")}<div><strong>Trip audio stays on your device.</strong><p>Audio is processed and discarded. Fingerprints and trips stay in IndexedDB. Optional online navigation shares map areas and route coordinates with map providers. Only the separate optional sound check can upload a clip, after explicit consent.</p></div></section><details class="details"><summary>Permissions, demo zones & limitations</summary><p>Use HTTPS on your phone and allow microphone and location access. Keep the app visible and your phone mounted; do not interact while driving. Only calibrate where it is safe and permitted.</p><p>Spectral matching compares sound fingerprints. Similar horns, sirens, and other loud sounds can match. A match score is not the probability that you honked. Quiet points are a local reflection tool, not a measure of driving safety.</p><p>Bundled zones are fictional demo markers in Bengaluru, not official restrictions or inferred corners. Real trips use these markers unless you load your own zone JSON. Edit <code>public/zones.json</code> before deployment or load a file below for this session.</p><label class="file-label">Load local zones (.json)<input id="zones-file" type="file" accept=".json,application/json"></label><p>${zones.length} zones loaded. GPS must be ≤ ${MAX_ACCURACY} m accuracy and ≤ 5 seconds old. Missing coverage cannot earn points.</p></details>`;
 }
 function calibrate() {
   const done = samples.every(Boolean),
@@ -387,6 +399,7 @@ async function action(a: string) {
   notice = "";
   try {
     if (
+      a === "hosted" ||
       a === "home" ||
       a === "calibrate" ||
       a === "calibrate-start" ||
@@ -396,6 +409,8 @@ async function action(a: string) {
         clearTimeout(captureTimer);
         capture = undefined;
       }
+      disposeSoundCheck?.();
+      disposeSoundCheck = undefined;
       mic.stop();
       ai.stop();
       micMessage = "Microphone off";
