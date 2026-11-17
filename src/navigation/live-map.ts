@@ -1,3 +1,4 @@
+import { programPenalties } from "../program";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { usable } from "../trip";
@@ -75,7 +76,10 @@ export class LiveNavigation {
         weight: 2,
         fillOpacity: 0.1,
       })
-        .bindTooltip(textNode(zone.name))
+        .bindTooltip(textNode(zone.name), {
+          permanent: trip.mode !== "live" && zone.type !== "quiet zone",
+          direction: "top",
+        })
         .addTo(this.map);
     }
     this.map.on("dragstart", () => {
@@ -106,6 +110,17 @@ export class LiveNavigation {
     if (trip.mode !== "live") {
       this.applyRoute(demoRoute());
       this.map.setView([12.9716, 77.596], 15);
+      L.polyline(
+        [
+          [12.9704, 77.5982],
+          [12.9716, 77.5982],
+          [12.9728, 77.5982],
+        ],
+        { color: "#b2b8b5", weight: 14 },
+      )
+        .addTo(this.map)
+        .bindTooltip("Fictional demo junction");
+      this.routeLine.bringToFront();
       this.setText(
         "privacy",
         "Simulated navigation rehearsal: local route and demo zones; no street-map or routing requests are made unless you enable the online map.",
@@ -127,7 +142,22 @@ export class LiveNavigation {
   update(trip: Trip, gpsAvailable: boolean, now: number) {
     if (this.disposed) return;
     this.trip = trip;
-    this.setText("points", String(scoreTrip(trip).totalPoints));
+    this.setText(
+      "points",
+      String(
+        trip.scoringVersion === 2
+          ? programPenalties(trip).length
+          : scoreTrip(trip).totalPoints,
+      ),
+    );
+    this.element.querySelector(".map-score span")!.textContent =
+      trip.scoringVersion === 2 ? "penalties" : "net points";
+    this.element
+      .querySelector(".map-score")!
+      .setAttribute(
+        "aria-label",
+        trip.scoringVersion === 2 ? "Live penalties" : "Live net points",
+      );
     const latest = [...trip.fixes].reverse().find((f) => usable(f));
     this.gpsUsable = !!latest && gpsAvailable && now - latest.at <= 5000;
     this.current = latest;

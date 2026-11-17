@@ -254,3 +254,27 @@
   outline-offset: 5px;
   border-radius: 20px;
 }
+.design-calibrate {
+  left: 36%;
+}
+.design-demo {
+  left: 50%;
+}
+@media (max-width: 600px) {
+  .design-calibrate {
+    left: 19%;
+    width: 29%;
+  }
+  .design-demo {
+    left: 52%;
+  }
+}
+.design-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font:
+    500 clamp(24px, 2.8vw, 40px)/1 Inter,
+    sans-serif;
+}

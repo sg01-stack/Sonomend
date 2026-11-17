@@ -4,7 +4,7 @@ export interface Zone {
   latitude: number;
   longitude: number;
   radius: number;
-  type: "quiet zone" | "marked corner";
+  type: "quiet zone" | "marked corner" | "road opening";
 }
 export interface Fix {
   at: number;
@@ -74,6 +74,7 @@ export interface ScoredCrossing extends Crossing {
 export type TripMode = "live" | "demo-mic" | "demo-scripted";
 export type DetectorMode = "Spectral matching" | "YAMNet + personal matching";
 export interface Trip {
+  scoringVersion?: 2;
   id: string;
   startedAt: number;
   endedAt?: number;
@@ -87,6 +88,7 @@ export interface Trip {
   crossings: Crossing[];
 }
 export interface Settings {
+  scoreTimeZone?: string;
   matchThreshold: number;
   demoDropout: boolean;
   aiEnabled?: boolean;

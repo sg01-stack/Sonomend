@@ -41,6 +41,15 @@ export async function mountModel(
     l.position.set(x, y, z);
     scene.add(l);
   }
+  const glass: {
+    mesh: THREE.Mesh;
+    material: THREE.MeshPhysicalMaterial;
+    origin: THREE.Vector3;
+    rotation: number;
+  }[] = [];
+  const reflectionTarget = new THREE.WebGLCubeRenderTarget(128);
+  const reflectionCamera = new THREE.CubeCamera(0.05, 100, reflectionTarget);
+  let interactionUntil = 0;
   let meshCount = 0,
     capsules = 0;
   gltf.scene.traverse((o) => {
@@ -63,6 +72,13 @@ export async function mountModel(
         m.envMapIntensity = 0;
         m.clearcoat = 0;
         o.material = m;
+        m.envMap = reflectionTarget.texture;
+        glass.push({
+          mesh: o,
+          material: m,
+          origin: o.position.clone(),
+          rotation: o.rotation.z,
+        });
       }
     }
   });
@@ -118,6 +134,9 @@ export async function mountModel(
   controls.maxPolarAngle = Math.PI - 0.3;
   controls.update();
   controls.saveState();
+  controls.addEventListener("change", () => {
+    interactionUntil = performance.now() + 180;
+  });
   host.append(renderer.domElement);
   host.dataset.ready = "true";
   host.tabIndex = 0;
@@ -157,7 +176,10 @@ export async function mountModel(
   const ro = new ResizeObserver(resize);
   ro.observe(host);
   let frame = 0,
-    last = performance.now();
+    last = performance.now(),
+    wiggleTime = 0,
+    reflectionBlend = 0,
+    lastReflection = 0;
   const loop = (now: number) => {
     frame = requestAnimationFrame(loop);
     const dt = Math.max(0, Math.min((now - last) / 1000, 0.05));
@@ -166,6 +188,33 @@ export async function mountModel(
     if (document.hidden || rect.bottom < 0 || rect.top > innerHeight) return;
     if (!reduced) mixer.update(dt);
     controls.update();
+    const moving = !reduced && (action.isRunning() || now < interactionUntil);
+    reflectionBlend +=
+      ((moving ? 1 : 0) - reflectionBlend) * Math.min(1, dt * 9);
+    if (!reduced) wiggleTime += dt;
+    glass.forEach((g, i) => {
+      g.mesh.position.y =
+        g.origin.y +
+        (reduced ? 0 : Math.sin(wiggleTime * 1.1 + i * 0.85) * 0.035);
+      g.mesh.rotation.z =
+        g.rotation + (reduced ? 0 : Math.sin(wiggleTime * 0.85 + i) * 0.018);
+      g.material.envMapIntensity = reflectionBlend * 1.2;
+      g.material.metalness = reflectionBlend * 0.3;
+      g.material.roughness = 0.24 - reflectionBlend * 0.16;
+      g.material.opacity = 0.19 + reflectionBlend * 0.23;
+    });
+    if (reflectionBlend > 0.02 && now - lastReflection > 80) {
+      lastReflection = now;
+      glass.forEach((g) => (g.mesh.visible = false));
+      reflectionCamera.position.copy(center);
+      const background = scene.background;
+      scene.background = new THREE.Color(0xd5d5d5);
+      reflectionCamera.update(renderer, scene);
+      scene.background = background;
+      glass.forEach((g) => (g.mesh.visible = true));
+    }
+    host.dataset.reflection = reflectionBlend > 0.05 ? "moving" : "still";
+    host.dataset.wiggle = reduced ? "off" : "on";
     host.dataset.revealTime = action.time.toFixed(3);
     renderer.render(scene, camera);
   };
@@ -177,6 +226,7 @@ export async function mountModel(
     controls.dispose();
     mixer.stopAllAction();
     disposeMeshes();
+    reflectionTarget.dispose();
     renderer.dispose();
     renderer.forceContextLoss();
     renderer.domElement.remove();

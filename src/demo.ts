@@ -11,12 +11,13 @@ export function demoFix(elapsed: number, startedAt: number): Fix {
 }
 export function demoStage(elapsed: number) {
   if (elapsed < 12000)
-    return "Approaching Garden. Keep quiet for the first crossing.";
-  if (elapsed < 27000) return "Garden quiet zone · stay quiet to earn a point.";
+    return "Demo route moving automatically. Watch the marked corner ahead.";
+  if (elapsed < 27000)
+    return "Passing Garden. No crossing points; daily awards are for real trips.";
   if (elapsed < 43000)
     return "First crossing complete. Approaching the Library.";
   if (elapsed < 53000)
-    return "Library + marked corner · play your calibrated horn now.";
+    return "Mapped corner ahead · play your calibrated horn once while inside the marker.";
   return "Route complete. End trip to see your report.";
 }
 export function scriptedFrame(
@@ -43,7 +44,7 @@ export function validateZones(input: unknown) {
       ids.has(z.id) ||
       typeof z.name !== "string" ||
       !z.name ||
-      !["quiet zone", "marked corner"].includes(z.type) ||
+      !["quiet zone", "marked corner", "road opening"].includes(z.type) ||
       !Number.isFinite(z.latitude) ||
       Math.abs(z.latitude) > 90 ||
       !Number.isFinite(z.longitude) ||

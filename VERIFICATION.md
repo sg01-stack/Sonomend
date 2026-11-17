@@ -63,3 +63,9 @@ Fresh recordings of the calibrated horn, different horns, sirens, cabin noise, d
 
 Final release check passed: 43 unit tests, 11 backend tests and 20 production-browser tests. New coverage verifies gray-only field before pointer input, pink trail, six GLB capsule nodes, no image/video element, automatic reveal advancing to 2.5 seconds, keyboard rotation/replay, reduced motion, calibration navigation and mobile overflow. Desktop render visually checked. Source GLB hash matches the user asset; runtime capsule materials disable transmission to avoid the megaphone image in the glass. No Blender source edits or public deployment.
 
+
+## Penalties, rewards, Demo and glass revision — 17 November 2026
+
+Full release command passed with 50 unit tests, 11 backend tests and 24 production-browser tests. A subsequent integration case brought unit coverage to 51; unit/build and all four program browser cases passed again after the JSON-export adjustment. Current validated coverage: 51 unit, 11 backend and 24 browser cases.
+
+New tests cover two-or-more horn starts within five seconds, one penalty per burst, separate bursts, complete mapped corner silence, uncertain/gapped crossings, startup versus later coverage gaps, real-day awards, duplicate-trip deduplication, 100-point reward thresholds, reload persistence, calibrated Demo without GPS, missing-calibration routing, and reflection settling/restarting while capsules wiggle. The actual TripEngine is exercised for a missed corner. Screenshot QA confirms the adjacent Demo button and dashboard counters on desktop/mobile. No physical-road or real-horn accuracy claim is made.

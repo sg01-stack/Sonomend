@@ -1,8 +1,10 @@
 import "@fontsource/great-vibes/latin-400.css";
 import "@fontsource/inter/latin-800.css";
 import "./landing.css";
-export const landingMarkup = () =>
-  `<section class="design-slide" aria-label="Sonomend introduction"><canvas class="reactive-field" aria-hidden="true"></canvas><div class="design-title"><h1><span>Sonomend.</span></h1><p><span>Peace on the pavement,<br>one decibel at a time.</span></p></div><div class="megaphone-stage" role="img" aria-label="Red and ivory megaphone surrounded by six glass capsules"></div><button class="design-calibrate" data-action="calibrate-start">CALIBRATE</button><section class="design-dashboard" aria-label="Dashboard"><h2><span>Dashboard</span></h2><div class="design-cells">${["penalties", "propers", "rewards"].map((x) => `<div><div class="design-cell" aria-hidden="true"></div><p><span>${x}</span></p></div>`).join("")}</div></section></section>`;
+export const landingMarkup = (
+  counters = { penalties: 0, points: 0, rewards: 0 },
+) =>
+  `<section class="design-slide" aria-label="Sonomend introduction"><canvas class="reactive-field" aria-hidden="true"></canvas><div class="design-title"><h1><span>Sonomend.</span></h1><p><span>Peace on the pavement,<br>one decibel at a time.</span></p></div><div class="megaphone-stage" role="img" aria-label="Red and ivory megaphone surrounded by six glass capsules"></div><button class="design-calibrate" data-action="calibrate-start">CALIBRATE</button><button class="design-calibrate design-demo" data-action="landing-demo">DEMO</button><section class="design-dashboard" aria-label="Dashboard"><h2><span>Dashboard</span></h2><div class="design-cells">${["penalties", "propers", "rewards"].map((x, i) => `<div><div class="design-cell" aria-label="${x === "propers" ? "points" : x}" data-counter="${x}">${[counters.penalties, counters.points, counters.rewards][i]}</div><p><span>${x}</span></p></div>`).join("")}</div></section></section>`;
 export function mountLanding(host: HTMLElement) {
   const canvas = host.querySelector<HTMLCanvasElement>(".reactive-field")!,
     ctx = canvas.getContext("2d")!;

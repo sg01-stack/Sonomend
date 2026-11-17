@@ -271,7 +271,7 @@ test("online navigation searches, advances turns, retains inputs, reroutes and p
   await expect(page.locator("[data-nav=instruction]")).toHaveText(
     "GPS unavailable · directions paused",
   );
-  await expect(page.locator("[data-nav=points]")).toHaveText("1");
+  await expect(page.locator("[data-nav=points]")).toHaveText("0");
   await page.screenshot({
     path: "test-results/navigation-mobile.png",
     fullPage: true,
@@ -319,7 +319,7 @@ test("routing failure keeps trip scoring alive and local demo maps require no ne
     page.getByRole("region", { name: "Live GPS map" }),
   ).toBeVisible();
   await page.clock.runFor(61000);
-  await expect(page.locator(".points-badge strong")).toHaveText("1");
+  await expect(page.locator(".points-badge strong")).toHaveText("0");
   expect(remote).toHaveLength(0);
 });
 

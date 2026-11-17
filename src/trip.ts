@@ -47,42 +47,52 @@ export function usable(f: Fix) {
 }
 const overlaps = (a: number, b: number, c: number, d: number) =>
   a <= d && c <= b;
-export function scoreCrossings(trip: Trip): ScoredCrossing[] {
-  return trip.crossings.map((c) => {
-    const end = c.end ?? trip.endedAt ?? Infinity;
-    const reasons: string[] = [];
-    if (c.initialInside)
-      reasons.push("Trip began inside this zone; entry was not observed.");
-    if (!c.end) reasons.push("Incomplete traversal: no usable exit recorded.");
-    for (const g of trip.gaps)
-      if (
-        (g.end ?? Infinity) > g.start &&
-        overlaps(c.start, end, g.start, g.end ?? Infinity)
-      )
-        reasons.push(
-          `${g.kind === "mic" ? "Microphone" : "GPS"} coverage interrupted: ${g.reason}`,
-        );
-    if (reasons.length)
-      return { ...c, outcome: "Unscored", reasons: [...new Set(reasons)] };
-    const events = trip.events.filter((e) =>
-      overlaps(c.start, end, e.start, e.end),
-    );
-    if (events.length)
+export function scoreCrossings(
+  trip: Trip,
+  includeContext = false,
+): ScoredCrossing[] {
+  return trip.crossings
+    .filter(
+      (c) =>
+        includeContext ||
+        trip.zones.find((z) => z.id === c.zoneId)?.type === "quiet zone",
+    )
+    .map((c) => {
+      const end = c.end ?? trip.endedAt ?? Infinity;
+      const reasons: string[] = [];
+      if (c.initialInside)
+        reasons.push("Trip began inside this zone; entry was not observed.");
+      if (!c.end)
+        reasons.push("Incomplete traversal: no usable exit recorded.");
+      for (const g of trip.gaps)
+        if (
+          (g.end ?? Infinity) > g.start &&
+          overlaps(c.start, end, g.start, g.end ?? Infinity)
+        )
+          reasons.push(
+            `${g.kind === "mic" ? "Microphone" : "GPS"} coverage interrupted: ${g.reason}`,
+          );
+      if (reasons.length)
+        return { ...c, outcome: "Unscored", reasons: [...new Set(reasons)] };
+      const events = trip.events.filter((e) =>
+        overlaps(c.start, end, e.start, e.end),
+      );
+      if (events.length)
+        return {
+          ...c,
+          outcome: "No point",
+          reasons: [
+            "A likely or uncertain detection occurred during this crossing.",
+          ],
+        };
       return {
         ...c,
-        outcome: "No point",
+        outcome: "Point earned",
         reasons: [
-          "A likely or uncertain detection occurred during this crossing.",
+          "Complete crossing with usable microphone and GPS coverage and no detections.",
         ],
       };
-    return {
-      ...c,
-      outcome: "Point earned",
-      reasons: [
-        "Complete crossing with usable microphone and GPS coverage and no detections.",
-      ],
-    };
-  });
+    });
 }
 export class TripEngine {
   readonly trip: Trip;
@@ -105,7 +115,7 @@ export class TripEngine {
       gaps: [],
       crossings: [],
     };
-    for (const z of zones.filter((z) => z.type === "quiet zone"))
+    for (const z of zones)
       this.zoneState.set(z.id, { initialized: false, armed: false });
     this.coverage("mic", false, at, "Waiting for microphone");
     this.coverage("gps", false, at, "Waiting for a usable position");
@@ -155,7 +165,9 @@ export class TripEngine {
     }
     this.lastFix = f;
     this.coverage("gps", true, f.at);
-    for (const z of this.trip.zones.filter((z) => z.type === "quiet zone")) {
+    for (const z of this.trip.zones.filter(
+      (z) => this.trip.scoringVersion === 2 || z.type === "quiet zone",
+    )) {
       const state = this.zoneState.get(z.id)!,
         d = distance(f, z);
       const inside = d + f.accuracy < z.radius;
@@ -215,7 +227,7 @@ export class TripEngine {
       review:
         d.label === "Likely your horn" &&
         zones.some((z) => z.type === "quiet zone"),
-      nearCorner: zones.some((z) => z.type === "marked corner"),
+      nearCorner: zones.some((z) => z.type !== "quiet zone"),
     });
   }
   end(at: number): Trip {

@@ -177,18 +177,14 @@ for (const dropout of [false, true])
     await expect(
       page.getByRole("heading", { name: "Your trip report." }),
     ).toBeVisible();
-    await expect(page.locator(".points-badge strong")).toHaveText(
-      dropout ? "0" : "1",
-    );
+    await expect(page.locator(".points-badge strong")).toHaveText("0");
     await expect(page.locator(".timeline")).toContainText("Review");
     await expect(page.locator(".timeline")).toContainText("Near marked corner");
     if (dropout)
       await expect(page.locator(".timeline")).toContainText("Unscored");
     await page.reload();
     await page.getByRole("button", { name: "View report" }).click();
-    await expect(page.locator(".points-badge strong")).toHaveText(
-      dropout ? "0" : "1",
-    );
+    await expect(page.locator(".points-badge strong")).toHaveText("0");
     await page.screenshot({
       path: `test-results/report-${dropout ? "dropout" : "clean"}-mobile.png`,
       fullPage: true,

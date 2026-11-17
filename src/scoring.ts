@@ -1,3 +1,4 @@
+import { programPenalties } from "./program";
 import { scoreCrossings } from "./trip";
 import type { Trip } from "./types";
 
@@ -12,6 +13,17 @@ export interface RepeatPattern {
 /** Transparent context rule, not an AI judgment of necessity. One deduction per crossing. */
 export function scoreTrip(trip: Trip) {
   const crossings = scoreCrossings(trip);
+  if (trip.scoringVersion === 2) {
+    const penalties = programPenalties(trip);
+    return {
+      crossings: [],
+      repeats: [] as RepeatPattern[],
+      quietPoints: 0,
+      deductions: penalties.length,
+      totalPoints: 0,
+      penalties,
+    };
+  }
   const repeats: RepeatPattern[] = [];
   const used = new Set<string>();
   for (const c of crossings) {
@@ -54,6 +66,7 @@ export function scoreTrip(trip: Trip) {
   ).length;
   const deductions = repeats.reduce((sum, r) => sum - r.adjustment, 0);
   return {
+    penalties: [] as ReturnType<typeof programPenalties>,
     crossings,
     repeats,
     quietPoints,

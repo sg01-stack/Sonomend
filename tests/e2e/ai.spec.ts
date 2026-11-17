@@ -215,7 +215,7 @@ test("a failed model load keeps spectral calibration usable and clearly labeled"
   ).toBeEnabled();
 });
 
-test("repeat-honk demo applies a transparent deduction and saves the chosen rule", async ({
+test("new repeat rule persists and scripted demo cannot earn daily rewards", async ({
   page,
 }) => {
   await page.clock.install();
@@ -225,22 +225,13 @@ test("repeat-honk demo applies a transparent deduction and saves the chosen rule
     .getByLabel("Simulate three separate honks (scripted audio)")
     .check();
   await page.getByRole("button", { name: "Start demo trip" }).click();
-  await expect(page.locator(".live-header")).toContainText("DEMO TRIP");
-  await page.clock.runFor(61000);
-  await expect(page.locator(".points-badge strong")).toHaveText("0");
-  await expect(page.locator(".timeline")).toContainText(
-    "Repeated horn pattern · Review",
-  );
-  await expect(page.locator(".timeline")).toContainText("−1 point");
-  await page.reload();
-  await page.getByLabel("Apply repeat-honk deductions").uncheck();
-  await page.getByRole("button", { name: "View report" }).click();
-  await expect(page.locator(".points-badge strong")).toHaveText("0");
-  await page.getByRole("button", { name: "Back to overview" }).click();
-  await page.selectOption("#demo-audio", "scripted");
-  await page.getByRole("button", { name: "Start demo trip" }).click();
-  await expect(page.locator(".live-header")).toContainText("DEMO TRIP");
   await page.clock.runFor(61000);
   await expect(page.locator(".points-badge strong")).toHaveText("1");
-  await expect(page.locator(".timeline")).toContainText("Review only");
+  await expect(page.locator(".timeline")).toContainText("Repeated horn burst");
+  await expect(page.locator(".timeline")).toContainText("within 5 seconds");
+  await page.reload();
+  await expect(page.locator('[data-counter="propers"]')).toHaveText("0");
+  await expect(page.locator('[data-counter="rewards"]')).toHaveText("0");
+  await page.getByRole("button", { name: "View report" }).click();
+  await expect(page.locator(".points-badge strong")).toHaveText("1");
 });

@@ -61,14 +61,14 @@ The default **Demo Trip** uses **real microphone audio** and a deterministic sim
 | Approximate time | What to do / expected behavior                                                                                                                                                                    |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0–11 s           | Approach Garden; keep quiet.                                                                                                                                                                      |
-| 12–26 s          | Traverse Garden quiet zone without a sound candidate; earn one point on exit.                                                                                                                     |
+| 12–26 s          | Traverse Garden quiet zone without a sound candidate; complete the observed crossing; no per-crossing points.                                                                                                                     |
 | 27–42 s          | Approach Library.                                                                                                                                                                                 |
 | 44–46 s          | Play a **fresh recording** of the calibrated horn near the phone. A sufficient match should become a review item in Library and be tagged near the marked corner. This requires phone validation. |
 | 54–60 s          | Exit Library. The trip ends automatically at 60 seconds and opens the report. You may also end it manually.                                                                                       |
 
-For an entirely deterministic pitch rehearsal, select **Simulated audio · deterministic test**. This is conspicuously labeled throughout and uses no mic or real GPS. It feeds generated feature frames through the actual spectral detector and the same trip engine. The expected report has **1 point, 1 likely match, 1 review item, and a near-corner tag**. Simulated inputs never overwrite your calibration.
+For an entirely deterministic pitch rehearsal, select **Simulated audio · deterministic test**. This is conspicuously labeled throughout and uses no mic or real GPS. It feeds generated feature frames through the actual spectral detector and the same trip engine. Under the current rules the expected report has **0 penalties, 1 likely match, and a near-corner tag**. Simulated inputs never overwrite your calibration.
 
-Enable **Simulate GPS dropout in first zone** to drop positions at 13–19 seconds. The first crossing becomes **Unscored**; the simulated-audio demo yields **0 points**. This preference persists. Turn it off for the clean rehearsal. For mic-dropout rehearsal with real audio, briefly switch apps during Garden and return; that crossing must remain unscored. Keep the page visible for the normal demo.
+Enable **Simulate GPS dropout in first zone** to drop positions at 13–19 seconds. The first crossing becomes **Unscored**; incomplete coverage never earns daily rewards. This preference persists. Turn it off for the clean rehearsal. For mic-dropout rehearsal with real audio, briefly switch apps during Garden and return; that crossing must remain unscored. Keep the page visible for the normal demo.
 
 ## Free on-device AI + your personal fingerprint
 
@@ -90,41 +90,20 @@ YAMNet is a free pretrained general sound classifier; Sonomend's private multisa
 
 Model provenance, checksums, Apache-2.0 licensing, and the small reproducible graph change that exposes existing embeddings are documented in `public/models/README.md` and `THIRD_PARTY_NOTICES.md`. No retraining or model API is required. `npm run prepare:ai` builds/copies local runtime assets automatically before `npm run dev` and `npm run build`.
 
-## Zones and scoring
+## Penalties, daily points and rewards (new trips)
 
-Edit `public/zones.json` and rebuild. Alternatively load a local JSON in **Permissions, demo zones & limitations** for the current real-trip session. Demo Trip always uses the bundled demo zones so it stays repeatable. The bundled markers are explicitly fictional, centered in Bengaluru. They are **not official restrictions** or corners inferred from GPS.
+- Two or more distinct likely horn detections whose starts are within five seconds produce **one penalty per burst**, anywhere in the trip. At least 480 ms separation is required; a sustained horn remains one event. A new burst begins after more than five seconds between detected starts. Microphone gaps cannot establish a repeat penalty.
+- A complete observed crossing of an explicitly mapped **marked corner** or **road opening**, with uninterrupted microphone/GPS coverage and no horn detection, produces **one penalty**. Initial-inside, incomplete, uncertain-audio and interrupted crossings do not create a missing-horn penalty. The app does not infer unmapped road topology from GPS.
+- A finished local calendar day with real tracked trips, usable monitoring and **zero penalties** earns **five points**, once. Startup sensor acquisition is excluded; later coverage gaps and unfinished crossings make the day ineligible. Today remains pending. Days without trips earn nothing.
+- Each 100 accumulated points unlocks one reward; the dashboard shows total points and rewards. These are local game counters, not redeemable vouchers. Penalties block that day's bonus; they do not subtract previously earned points.
+- Demo trips show practice penalties but never earn real daily points/rewards. The overview shows the last demo result separately. The three landing counters are real-trip penalties, points (the supplied “propers” label is preserved) and rewards.
+- The scoring version is saved per trip. Earlier history keeps its legacy scoring and is excluded from new daily rewards. Rewards are recomputed from saved trip IDs, so reload/retry cannot duplicate an award. The scoring timezone is saved on this device.
 
-```json
-[
-  {
-    "id": "example",
-    "name": "My marked place",
-    "latitude": 12.9716,
-    "longitude": 77.5946,
-    "radius": 80,
-    "type": "quiet zone"
-  }
-]
-```
+Local zone JSON accepts unique id, name, latitude, longitude, radius (20–5000 meters), and type: quiet zone, marked corner, or road opening. At most 100 zones are accepted. Bundled zones are fictional Bengaluru demo markers, not official restrictions. Live trips use the current loaded zone snapshot; they cannot score missing horns at unmapped corners. Quiet zones no longer award individual crossing points under the new rules.
 
-IDs must be unique; radius is in meters (20–5000). Supported types are `quiet zone` and `marked corner`. At most 100 zones can be loaded. Each saved trip contains a zone snapshot, so edits do not change old reports.
+## Demo beside Calibrate
 
-- GPS fixes retain timestamps and reported accuracy. Event locations require a prior fix at most 5 seconds old, accuracy at most 35 m, and no active GPS interruption. Unlocated events stay in reports.
-- A quiet zone is entered only when the fix plus its accuracy radius is inside the boundary. Exit requires the fix minus accuracy to exceed the radius by 15 m. Rearming after exit requires another outside fix beyond radius + accuracy + 40 m; this limits repeated points from boundary drift. Extremely fast traversals between sparse fixes are not inferred.
-- One point requires observed entry and exit, uninterrupted usable mic/GPS coverage, and no likely **or uncertain** detection overlapping that crossing. Unlocated detections during a crossing also prevent points conservatively.
-- Crossings starting inside, missing an exit, or intersecting poor/stale GPS, mic suspension, processing pauses, or a hidden page are **Unscored** with reasons. Entire zones missed while GPS is unavailable cannot be reconstructed; coverage gaps are reported.
-- Likely matches located within a quiet zone's radius plus reported accuracy receive **Review**. This includes possible boundary overlap conservatively. Nearby marked corners are tagged the same way. Neither earns bonus points. Detections outside zones have no zone score.
-- Late-finalized detections can revise a recently exited crossing. The final report recomputes scores. Live point counts are provisional while an event is still being merged.
-
-## Repeated honks and point deductions
-
-**Apply repeat-honk deductions** is enabled by default for new trips and can be disabled in settings. The chosen rule is saved with each trip, so changing it later does not rewrite history. Older reports have no new deductions.
-
-A **Repeated horn pattern · Review** requires three distinct likely-own events within ten seconds, separated by at least 480 ms, with usable locations in the same complete quiet-zone crossing. Missing mic/GPS coverage, uncertain or unlocated events, incomplete traversal, or one sustained honk cannot trigger a deduction. The rule deducts **one point maximum per crossing**, avoids double-counting the same events in overlapping zones, and never penalizes events outside quiet zones. Net points can be negative. The report shows earned crossing points, deductions, and the reason; disabling deductions retains review flags without subtracting points.
-
-This is an explicit, configurable game rule—not an AI determination that a honk was unnecessary. Audio and GPS cannot establish intent or road danger.
-
-For a repeatable rehearsal, select **Simulated audio · deterministic test**, then **Simulate three separate honks**. Library gets pulses at 44, 46, and 48 seconds. The expected net score is **0**: +1 clean Garden crossing and −1 repeat adjustment in Library. Disable the deduction setting for a new trip to get **1** point with a review-only pattern. These demo pulses are feature-level simulated input; the real AI path is separately tested with synthetic audio through Web Audio and the bundled model.
+The landing **DEMO** button uses your saved horn calibration, a real microphone, and a fixed 60-second simulated route. It never requests real GPS. Without calibration, it opens calibration first; saving then starts the demo. A labeled local junction and permanent corner marker remain visible without online map services. Play one brief calibrated horn sound while the moving marker is inside the marked corner, near 44–49 seconds. Repeated sounds within five seconds count as a practice penalty. The route ends automatically and saves its report. The separately labeled scripted-audio option remains available in the lower demo controls for deterministic checks.
 
 ## Free static HTTPS deployment
 
@@ -173,6 +152,6 @@ See `VERIFICATION.md` for the checks actually run and their limits.
 Overview → Open optional sound check records a separate three-second WAV, allows local playback, and uploads only after explicit per-send consent. Clearing, hiding or leaving the page releases the microphone and clears the clip. It never changes calibration, events or points. Static hosts safely show the feature as unavailable. See [HOSTED_AI.md](HOSTED_AI.md) for server setup, privacy, limits and current verification.
 ## Landing design and 3D controls
 
-The opening viewport follows the supplied annotated screenshot. Only gray texture and a pink cursor trail are used in its background. Text reveals rightward, the dashboard rises, and its labels reveal downward. The user's GLB is rendered as separate mesh objects, with no poster/video or backdrop rectangle. Six capsule materials use transparent surfaces without screen-space transmission, preventing the megaphone image from appearing in the glass. This is a web material adjustment; the original .blend and GLB remain unchanged.
+The opening viewport follows the supplied annotated screenshot. Only gray texture and a pink cursor trail are used in its background. Text reveals rightward, the dashboard rises, and its labels reveal downward. The user's GLB is rendered as separate mesh objects, with no poster/video or backdrop rectangle. Capsules gently wiggle. A local cube reflection capture is visible during megaphone reveal/view movement and fades away when it settles; the wiggle alone does not reactivate reflections. This is a web material adjustment; the original .blend and GLB remain unchanged.
 
 The 2.5-second authored reveal starts as soon as the GLB loads and holds the final pose. Drag the scene to rotate it; focus it and use arrow keys for rotation, Enter to replay, or Escape to restore the view. Reduced-motion preference starts at the final pose and suppresses animated text/trail. Three.js and fonts are served locally. The screenshot does not include editable font metadata, so Inter/Great Vibes are approximate matches.

@@ -1,3 +1,5 @@
+import { programLedger, programPenalties } from "./program";
+let demoAfterCalibration = false;
 import { landingMarkup, mountLanding } from "./landing";
 let disposeLanding: (() => void) | undefined;
 import "./style.css";
@@ -120,7 +122,7 @@ const button = (
 function shell(content: string) {
   disposeLanding?.();
   disposeLanding = undefined;
-  const markup = `${page === "home" ? landingMarkup() : ""}<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
+  const markup = `${page === "home" ? landingMarkup(programLedger(history, Date.now(), settings.scoreTimeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)) : ""}<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
     ["home", "Overview", "home"],
     ["calibrate", "Calibration", "mic"],
     ["history", "Trip history", "history"],
@@ -259,11 +261,16 @@ function render() {
 }
 function home() {
   const totals = latest ? scoreCrossings(latest) : [];
-  return `<section class="hero"><div class="hero-copy"><p class="eyebrow"><span class="tiny-dot"></span> A LITTLE AWARENESS GOES A LONG WAY</p><h1>A quieter way<br><em>forward.</em></h1><p>Get to know your horn habits. A simple companion to listen, reflect, and make every trip a little more mindful.</p><div class="hero-actions">${button(`Start a trip ${icon("arrow")}`, "start", "lime", busy || !calibration || !zoneReady)}<span>${calibration ? "Your horn is calibrated. You’re set." : "First, let’s get to know your horn."}</span></div></div><div class="signal-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div><div class="art-label top">LESS NOISE. MORE AWARENESS.</div><div class="signal-core">${icon("sound")}</div><div class="signal-tag">${icon("leaf")} Room for a quieter road</div><span class="orbit-dot dot-one"></span><span class="orbit-dot dot-two"></span></div></section>
+  const account = programLedger(
+    history,
+    Date.now(),
+    settings.scoreTimeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+  return `<p class="message" role="status">Real trips: ${account.penalties} penalties · ${account.points} points · ${account.rewards} rewards. ${account.progress}/100 points toward the next reward. ${latest?.mode.startsWith("demo") && latest.scoringVersion === 2 ? `Last demo: ${programPenalties(latest).length} practice penalties (excluded from real totals).` : "Today’s bonus is pending until the day ends."}</p><section class="hero"><div class="hero-copy"><p class="eyebrow"><span class="tiny-dot"></span> A LITTLE AWARENESS GOES A LONG WAY</p><h1>A quieter way<br><em>forward.</em></h1><p>Get to know your horn habits. A simple companion to listen, reflect, and make every trip a little more mindful.</p><div class="hero-actions">${button(`Start a trip ${icon("arrow")}`, "start", "lime", busy || !calibration || !zoneReady)}<span>${calibration ? "Your horn is calibrated. You’re set." : "First, let’s get to know your horn."}</span></div></div><div class="signal-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div><div class="art-label top">LESS NOISE. MORE AWARENESS.</div><div class="signal-core">${icon("sound")}</div><div class="signal-tag">${icon("leaf")} Room for a quieter road</div><span class="orbit-dot dot-one"></span><span class="orbit-dot dot-two"></span></div></section>
   <div class="section-title"><div><p class="eyebrow">YOUR STARTING POINT</p><h2>A little setup. A better picture.</h2></div><span class="pill">${detectorName()}</span></div>
   <section class="setup-grid"><article class="card calibration-card"><div class="card-heading"><span class="icon-tile">${icon("mic")}</span><span class="pill ${calibration ? "success" : ""}">${calibration ? "Calibrated" : "Step 01"}</span></div><h3>${calibration ? "Your horn, recognized." : "Your horn, your baseline."}</h3><p>${calibration ? `Three fingerprints saved on ${date(calibration.createdAt)}. Recalibrate if your vehicle, phone, or mic position changes.` : "While safely parked, capture the background and three short honks. About 30 seconds to get started."}</p>${button(`${calibration ? "Recalibrate & Start" : "Calibrate & Start"} ${icon("arrow")}`, "calibrate-start", "outline", busy)}</article><article class="card how-card"><p class="eyebrow">THE JOURNEY</p><ol class="steps"><li><span>01</span><div><strong>Calibrate</strong><small>Give your horn a local fingerprint.</small></div></li><li><span>02</span><div><strong>Take a trip</strong><small>Keep the app visible. Let it listen.</small></div></li><li><span>03</span><div><strong>Look back</strong><small>See detections, context, and quiet crossings.</small></div></li></ol></article></section>
-  <section class="latest-section"><div class="section-title"><h2>Your last journey</h2>${latest ? button("View report " + icon("arrow"), "latest", "text-button") : ""}</div><div class="stats-grid"><div class="stat"><span>Likely your horn</span><strong>${latest ? latest.events.filter((e) => e.label === "Likely your horn").length : "—"}</strong><small>Matches, not proof of ownership</small></div><div class="stat"><span>Quiet crossings</span><strong>${latest ? totals.filter((c) => c.outcome === "Point earned").length : "—"}</strong><small>Complete, with clear coverage</small></div><div class="stat accent"><span>Net points</span><strong>${latest ? scoreTrip(latest).totalPoints : "—"}<span>${icon("leaf")}</span></strong><small>${latest ? date(latest.startedAt) : "Your first journey starts here"}</small></div></div></section>
-  <section class="card ai-card"><div><p class="eyebrow">FREE · PRIVATE · PERSONAL</p><h2>Your horn, with a second check.</h2><p>YAMNet checks for horn-like sounds. Your three private sound fingerprints help decide whether the sound resembles your vehicle. Similar horns can still match.</p><small>${personalized() ? "Your personal AI fingerprint is saved on this device." : "Recalibrate with AI enabled to create your personal AI fingerprint. Existing calibration still works in Spectral matching."}</small></div><label class="checkbox"><input id="ai-enabled" type="checkbox" ${aiEnabled() ? "checked" : ""}> Use free on-device AI</label><label class="checkbox"><input id="repeat-penalty" type="checkbox" ${settings.repeatPenalty !== false ? "checked" : ""}> Apply repeat-honk deductions</label><small>Three separate likely matches within 10 seconds in a complete quiet-zone crossing deduct one point, at most once per crossing. Missing coverage prevents deductions. A review rule, not proof of unnecessary honking.</small></section><section class="card demo-card"><div><span class="eyebrow">TRY IT BEFORE THE ROAD</span><h2>A short route. A real rehearsal.</h2><p>60 seconds through two <strong>demo quiet zones</strong> and a marked corner. Simulated GPS; real microphone by default.</p></div><div class="demo-controls"><label for="demo-audio">Demo audio</label><select id="demo-audio"><option value="mic" ${demoAudio === "mic" ? "selected" : ""}>Real microphone (calibration required)</option><option value="scripted" ${demoAudio === "scripted" ? "selected" : ""}>Simulated audio · deterministic test</option></select><label class="checkbox"><input type="checkbox" id="dropout" ${settings.demoDropout ? "checked" : ""}> Simulate GPS dropout in first zone</label><label class="checkbox"><input type="checkbox" id="demo-repeats" ${settings.demoRepeats ? "checked" : ""} ${demoAudio !== "scripted" ? "disabled" : ""}> Simulate three separate honks (scripted audio)</label>${button(`${icon("play")} Start demo trip`, "demo", "outline", busy || !zoneReady || (demoAudio === "mic" && !calibration))}<small>${demoAudio === "mic" ? "Stay quiet in Garden; play your calibrated horn in Library." : "Clearly labeled test inputs. No microphone or real GPS used."}</small></div></section>
+  <section class="latest-section"><div class="section-title"><h2>Your last journey</h2>${latest ? button("View report " + icon("arrow"), "latest", "text-button") : ""}</div><div class="stats-grid"><div class="stat"><span>Likely your horn</span><strong>${latest ? latest.events.filter((e) => e.label === "Likely your horn").length : "—"}</strong><small>Matches, not proof of ownership</small></div><div class="stat"><span>Quiet crossings</span><strong>${latest ? totals.filter((c) => c.outcome === "Point earned").length : "—"}</strong><small>Complete, with clear coverage</small></div><div class="stat accent"><span>Daily points</span><strong>${account.points}<span>${icon("leaf")}</span></strong><small>${latest ? date(latest.startedAt) : "Your first journey starts here"}</small></div></div></section>
+  <section class="card ai-card"><div><p class="eyebrow">FREE · PRIVATE · PERSONAL</p><h2>Your horn, with a second check.</h2><p>YAMNet checks for horn-like sounds. Your three private sound fingerprints help decide whether the sound resembles your vehicle. Similar horns can still match.</p><small>${personalized() ? "Your personal AI fingerprint is saved on this device." : "Recalibrate with AI enabled to create your personal AI fingerprint. Existing calibration still works in Spectral matching."}</small></div><label class="checkbox"><input id="ai-enabled" type="checkbox" ${aiEnabled() ? "checked" : ""}> Use free on-device AI</label><small>Two or more separate horns within 5 seconds: one penalty per burst. No horn during a complete mapped corner or road-opening crossing: one penalty. Missing coverage is unscored. A completed tracked day with zero penalties earns 5 points; 100 points unlock 1 reward. Demo practice earns no daily points.</small></section><section class="card demo-card"><div><span class="eyebrow">TRY IT BEFORE THE ROAD</span><h2>A short route. A real rehearsal.</h2><p>60 seconds through two <strong>demo quiet zones</strong> and a marked corner. Simulated GPS; real microphone by default.</p></div><div class="demo-controls"><label for="demo-audio">Demo audio</label><select id="demo-audio"><option value="mic" ${demoAudio === "mic" ? "selected" : ""}>Real microphone (calibration required)</option><option value="scripted" ${demoAudio === "scripted" ? "selected" : ""}>Simulated audio · deterministic test</option></select><label class="checkbox"><input type="checkbox" id="dropout" ${settings.demoDropout ? "checked" : ""}> Simulate GPS dropout in first zone</label><label class="checkbox"><input type="checkbox" id="demo-repeats" ${settings.demoRepeats ? "checked" : ""} ${demoAudio !== "scripted" ? "disabled" : ""}> Simulate three separate honks (scripted audio)</label>${button(`${icon("play")} Start demo trip`, "demo", "outline", busy || !zoneReady || (demoAudio === "mic" && !calibration))}<small>${demoAudio === "mic" ? "Stay quiet in Garden; play your calibrated horn in Library." : "Clearly labeled test inputs. No microphone or real GPS used."}</small></div></section>
   <section class="card"><p class="eyebrow">OPTIONAL · PARKED ONLY</p><h2>A separate sound check</h2><p>Record and preview a short clip, then choose whether to send it to Google Gemini for general horn evidence. No trip scoring changes.</p>${button("Open optional sound check", "hosted", "outline")}</section><section class="privacy-strip">${icon("shield")}<div><strong>Trip audio stays on your device.</strong><p>Audio is processed and discarded. Fingerprints and trips stay in IndexedDB. Optional online navigation shares map areas and route coordinates with map providers. Only the separate optional sound check can upload a clip, after explicit consent.</p></div></section><details class="details"><summary>Permissions, demo zones & limitations</summary><p>Use HTTPS on your phone and allow microphone and location access. Keep the app visible and your phone mounted; do not interact while driving. Only calibrate where it is safe and permitted.</p><p>Spectral matching compares sound fingerprints. Similar horns, sirens, and other loud sounds can match. A match score is not the probability that you honked. Quiet points are a local reflection tool, not a measure of driving safety.</p><p>Bundled zones are fictional demo markers in Bengaluru, not official restrictions or inferred corners. Real trips use these markers unless you load your own zone JSON. Edit <code>public/zones.json</code> before deployment or load a file below for this session.</p><label class="file-label">Load local zones (.json)<input id="zones-file" type="file" accept=".json,application/json"></label><p>${zones.length} zones loaded. GPS must be ≤ ${MAX_ACCURACY} m accuracy and ≤ 5 seconds old. Missing coverage cannot earn points.</p></details>`;
 }
 function calibrate() {
@@ -279,15 +286,22 @@ function live() {
     isDemo = t.mode !== "live";
   const micOk = t.mode === "demo-scripted" || engine.available("mic"),
     gpsOk = engine.available("gps");
-  return `<div class="live-header"><span class="pill ${micOk && gpsOk ? "success" : "warning"}"><span class="tiny-dot"></span>${isDemo ? "DEMO TRIP" : "LIVE TRIP"}</span><span class="muted">${t.mode !== "demo-scripted" && ai.ready && personalized() ? "YAMNet + personal matching" : "Spectral matching"}</span></div>${isDemo ? `<div class="demo-banner">${t.mode === "demo-scripted" ? "SIMULATED AUDIO + GPS · deterministic test, no microphone" : "SIMULATED GPS · real microphone and detector"}${settings.demoDropout ? " · GPS dropout enabled" : ""}</div>` : ""}${t.mode !== "demo-scripted" && aiEnabled() && personalized() && !ai.ready ? `<div class="message" role="status">${esc(ai.reason)}</div>` : ""}<div id="live-navigation"></div><section class="live-main"><p class="eyebrow">${micOk && gpsOk ? "LISTENING TO THE JOURNEY" : "COVERAGE NEEDS ATTENTION"}</p><h1 class="timer">${clock(elapsed)}</h1><p>${isDemo ? esc(demoStage(elapsed)) : "Keep this screen visible. Stay focused on the road."}</p><div class="live-signal" aria-hidden="true">${Array.from({ length: 21 }, (_, i) => `<i style="--bar:${20 + Math.sin(i * 2.1) ** 2 * 60}%"></i>`).join("")}</div><div class="status-row"><span class="status ${micOk ? "ok" : "bad"}">${icon("mic")}${t.mode === "demo-scripted" ? "Simulated audio" : micOk ? "Microphone active" : "Microphone interrupted"}</span><span class="status ${gpsOk ? "ok" : "bad"}">${icon("pin")}${gpsOk ? (isDemo ? "Demo GPS · ±5 m" : esc(gpsMessage)) : "GPS interrupted"}</span></div>${!micOk ? `<p class="warning-text">${esc(micMessage)}. This interval cannot earn quiet points.</p>${button("Resume microphone", "resume-mic", "outline", busy)}` : ""}${!gpsOk ? `<p class="warning-text">${esc(gpsMessage)}. Crossings with missing GPS remain unscored.</p>${t.mode === "live" ? button("Retry GPS permission", "retry-gps", "outline") : ""}` : ""}</section><div class="stats-grid live-stats"><div class="stat"><span>Likely your horn</span><strong>${t.events.filter((e) => e.label === "Likely your horn").length}</strong></div><div class="stat"><span>Uncertain</span><strong>${t.events.filter((e) => e.label === "Uncertain").length}</strong></div><div class="stat accent"><span>Net points</span><strong>${scoreTrip(t).totalPoints}</strong></div></div><div class="end-area">${button(`${icon("stop")} End trip & see report`, "end", "primary", busy)}<small>Stops microphone and GPS. Saves this trip on your device.</small></div><div class="note">Foreground use only. Locking your phone, switching apps, stale positions, or audio interruptions exclude affected crossings from scoring. Context labels never establish why someone honked.</div>`;
+  return `<div class="live-header"><span class="pill ${micOk && gpsOk ? "success" : "warning"}"><span class="tiny-dot"></span>${isDemo ? "DEMO TRIP" : "LIVE TRIP"}</span><span class="muted">${t.mode !== "demo-scripted" && ai.ready && personalized() ? "YAMNet + personal matching" : "Spectral matching"}</span></div>${isDemo ? `<div class="demo-banner">${t.mode === "demo-scripted" ? "SIMULATED AUDIO + GPS · deterministic test, no microphone" : "SIMULATED GPS · real microphone and detector"}${settings.demoDropout ? " · GPS dropout enabled" : ""}</div>` : ""}${t.mode !== "demo-scripted" && aiEnabled() && personalized() && !ai.ready ? `<div class="message" role="status">${esc(ai.reason)}</div>` : ""}<div id="live-navigation"></div><section class="live-main"><p class="eyebrow">${micOk && gpsOk ? "LISTENING TO THE JOURNEY" : "COVERAGE NEEDS ATTENTION"}</p><h1 class="timer">${clock(elapsed)}</h1><p>${isDemo ? esc(demoStage(elapsed)) : "Keep this screen visible. Stay focused on the road."}</p><div class="live-signal" aria-hidden="true">${Array.from({ length: 21 }, (_, i) => `<i style="--bar:${20 + Math.sin(i * 2.1) ** 2 * 60}%"></i>`).join("")}</div><div class="status-row"><span class="status ${micOk ? "ok" : "bad"}">${icon("mic")}${t.mode === "demo-scripted" ? "Simulated audio" : micOk ? "Microphone active" : "Microphone interrupted"}</span><span class="status ${gpsOk ? "ok" : "bad"}">${icon("pin")}${gpsOk ? (isDemo ? "Demo GPS · ±5 m" : esc(gpsMessage)) : "GPS interrupted"}</span></div>${!micOk ? `<p class="warning-text">${esc(micMessage)}. This interval cannot earn quiet points.</p>${button("Resume microphone", "resume-mic", "outline", busy)}` : ""}${!gpsOk ? `<p class="warning-text">${esc(gpsMessage)}. Crossings with missing GPS remain unscored.</p>${t.mode === "live" ? button("Retry GPS permission", "retry-gps", "outline") : ""}` : ""}</section><div class="stats-grid live-stats"><div class="stat"><span>Likely your horn</span><strong>${t.events.filter((e) => e.label === "Likely your horn").length}</strong></div><div class="stat"><span>Uncertain</span><strong>${t.events.filter((e) => e.label === "Uncertain").length}</strong></div><div class="stat accent"><span>${t.scoringVersion === 2 ? "Penalties" : "Net points"}</span><strong>${t.scoringVersion === 2 ? programPenalties(t).length : scoreTrip(t).totalPoints}</strong></div></div><div class="end-area">${button(`${icon("stop")} End trip & see report`, "end", "primary", busy)}<small>Stops microphone and GPS. Saves this trip on your device.</small></div><div class="note">Foreground use only. Locking your phone, switching apps, stale positions, or audio interruptions exclude affected crossings from scoring. Context labels never establish why someone honked.</div>`;
 }
 function reportView() {
   const t = report;
   if (!t) return "<p>No report saved yet.</p>";
-  const crossings = scoreCrossings(t),
-    points = scoreTrip(t).totalPoints;
+  const crossings = scoreCrossings(t, t.scoringVersion === 2),
+    points =
+      t.scoringVersion === 2
+        ? programPenalties(t).length
+        : scoreTrip(t).totalPoints;
   const zoneName = (id: string) => t.zones.find((z) => z.id === id)?.name ?? id;
   const rows = [
+    ...scoreTrip(t).penalties.map((p) => ({
+      at: p.at,
+      html: `<span class="timeline-icon warm">${icon("alert")}</span><div><strong>1 penalty · ${p.kind === "missed-corner" ? "No horn at mapped crossing" : "Repeated horn burst"}</strong><p>${esc(p.reason)}</p></div>`,
+    })),
     ...t.events.map((e) => ({
       at: e.start,
       html: `<span class="timeline-icon ${e.review ? "warm" : ""}">${icon("sound")}</span><div><div class="event-title"><strong>${e.label}</strong><span class="pill ${e.review ? "warning" : ""}">${e.review ? "Review" : e.label === "Uncertain" ? "Uncertain candidate" : "Detected"}</span></div><p>${Math.round(e.match * 100)}% match score · ${esc(e.detectorMode ?? "Spectral matching")} · ${e.location ? `GPS ±${Math.round(e.location.accuracy)} m` : "Unlocated · no recent, accurate GPS"}</p>${e.ai ? `<p class="small">Horn model score ${Math.round(e.ai.hornScore * 100)}% · personal embedding match ${Math.round(e.ai.embeddingMatch * 100)}% · spectral match ${Math.round(e.ai.spectralMatch * 100)}%</p>` : ""}${e.fallbackReason ? `<p class="small">${esc(e.fallbackReason)}</p>` : ""}<small>${e.zoneIds.length ? e.zoneIds.map((id) => esc(zoneName(id))).join(" · ") : "No zone score"}${e.nearCorner ? " · Near marked corner" : ""}${e.simulated ? " · Simulated audio" : ""}</small></div>`,
@@ -298,10 +312,10 @@ function reportView() {
     })),
     ...crossings.map((c) => ({
       at: c.start,
-      html: `<span class="timeline-icon ${c.outcome === "Point earned" ? "green" : ""}">${icon("leaf")}</span><div><div class="event-title"><strong>${esc(zoneName(c.zoneId))}</strong><span class="pill ${c.outcome === "Point earned" ? "success" : ""}">${c.outcome === "Point earned" ? "+1 point" : c.outcome}</span></div><p>${c.reasons.map(esc).join(" ")}</p><small>${time(c.start)} → ${c.end ? time(c.end) : "Trip ended before exit"}</small></div>`,
+      html: `<span class="timeline-icon ${c.outcome === "Point earned" ? "green" : ""}">${icon("leaf")}</span><div><div class="event-title"><strong>${esc(zoneName(c.zoneId))}</strong><span class="pill ${c.outcome === "Point earned" ? "success" : ""}">${t.scoringVersion === 2 ? (c.outcome === "Unscored" ? "Unscored" : "Observed crossing") : c.outcome === "Point earned" ? "+1 point" : c.outcome}</span></div><p>${c.reasons.map(esc).join(" ")}</p><small>${time(c.start)} → ${c.end ? time(c.end) : "Trip ended before exit"}</small></div>`,
     })),
   ].sort((a, b) => a.at - b.at);
-  return `<div class="report-heading"><div><p class="eyebrow">THE JOURNEY, REFLECTED</p><h1>Your trip report.</h1><p>${date(t.startedAt)} · ${clock((t.endedAt ?? t.startedAt) - t.startedAt)} · ${t.mode === "live" ? "Real trip" : t.mode === "demo-mic" ? "Demo GPS · real microphone" : "Simulated audio + GPS"}</p></div><div class="points-badge"><strong>${points}</strong><span>net points</span>${icon("leaf")}</div></div>${savePending ? `<div class="message error">This report is only in memory. Local saving failed. ${button("Retry save", "retry-save", "outline")}</div>` : `<div class="saved-label">${icon("check")} Saved on this device · ${esc(t.detector)}</div>`}<div class="stats-grid report-stats"><div class="stat"><span>Likely your horn</span><strong>${t.events.filter((e) => e.label === "Likely your horn").length}</strong></div><div class="stat"><span>Uncertain detections</span><strong>${t.events.filter((e) => e.label === "Uncertain").length}</strong></div><div class="stat"><span>Scored quiet crossings</span><strong>${scoreTrip(t).quietPoints}</strong></div><div class="stat"><span>Quiet-zone review items</span><strong>${t.events.filter((e) => e.review).length}</strong></div></div><p class="small muted">${scoreTrip(t).quietPoints} quiet crossing points − ${scoreTrip(t).deductions} repeat-honk deductions = ${points} net points. ${t.repeatPenalty ? "Repeat deductions enabled for this trip." : "Repeat deductions disabled for this trip."}</p><section class="card route-card"><div class="card-heading"><h2>A sketch of your route</h2><small>No external maps</small></div>${routeSvg(t)}<div class="route-legend"><span><i></i> Route</span><span><i class="orange"></i> Review event</span><span><i class="gold"></i> Other detection</span></div><p class="small">${t.events.filter((e) => !e.location).length} unlocated events retained. Gaps are not connected. This sketch is not a navigation map.</p></section><section class="card timeline-card"><div class="card-heading"><h2>Trip timeline</h2><span class="muted">${rows.length} items</span></div>${rows.length ? `<ol class="timeline">${rows.map((r) => `<li><time>${time(r.at)}</time>${r.html}</li>`).join("")}</ol>` : '<div class="empty">No detections or zone crossings recorded. Check coverage below; silence alone does not establish a quiet crossing.</div>'}</section><details class="details"><summary>Coverage & scoring notes · ${t.gaps.filter((g) => (g.end ?? t.endedAt!) - g.start > 0).length} interruptions</summary><p>One point per complete, silent quiet-zone crossing with continuous usable mic and GPS. Detections anywhere during a crossing, including uncertain or unlocated sounds, prevent a point. Boundary hysteresis limits GPS drift rewards.</p>${
+  return `<div class="report-heading"><div><p class="eyebrow">THE JOURNEY, REFLECTED</p><h1>Your trip report.</h1><p>${date(t.startedAt)} · ${clock((t.endedAt ?? t.startedAt) - t.startedAt)} · ${t.mode === "live" ? "Real trip" : t.mode === "demo-mic" ? "Demo GPS · real microphone" : "Simulated audio + GPS"}</p></div><div class="points-badge"><strong>${points}</strong><span>${t.scoringVersion === 2 ? "penalties" : "net points"}</span>${icon("leaf")}</div></div>${savePending ? `<div class="message error">This report is only in memory. Local saving failed. ${button("Retry save", "retry-save", "outline")}</div>` : `<div class="saved-label">${icon("check")} Saved on this device · ${esc(t.detector)}</div>`}<div class="stats-grid report-stats"><div class="stat"><span>Likely your horn</span><strong>${t.events.filter((e) => e.label === "Likely your horn").length}</strong></div><div class="stat"><span>Uncertain detections</span><strong>${t.events.filter((e) => e.label === "Uncertain").length}</strong></div><div class="stat"><span>Quiet crossings observed</span><strong>${scoreTrip(t).quietPoints}</strong></div><div class="stat"><span>Quiet-zone review items</span><strong>${t.events.filter((e) => e.review).length}</strong></div></div><p class="small muted">${t.scoringVersion === 2 ? `${points} penalties. Two or more distinct horns within five seconds: one penalty per burst. No horn at a fully observed mapped corner/road opening: one penalty. ${t.mode === "live" ? "Five points are awarded after a tracked day ends with zero penalties; 100 points unlock one reward." : "Demo practice does not earn daily points or rewards."}` : `${scoreTrip(t).quietPoints} quiet crossing points − ${scoreTrip(t).deductions} deductions = ${points} net points (legacy rules).`}</p><section class="card route-card"><div class="card-heading"><h2>A sketch of your route</h2><small>No external maps</small></div>${routeSvg(t)}<div class="route-legend"><span><i></i> Route</span><span><i class="orange"></i> Review event</span><span><i class="gold"></i> Other detection</span></div><p class="small">${t.events.filter((e) => !e.location).length} unlocated events retained. Gaps are not connected. This sketch is not a navigation map.</p></section><section class="card timeline-card"><div class="card-heading"><h2>Trip timeline</h2><span class="muted">${rows.length} items</span></div>${rows.length ? `<ol class="timeline">${rows.map((r) => `<li><time>${time(r.at)}</time>${r.html}</li>`).join("")}</ol>` : '<div class="empty">No detections or zone crossings recorded. Check coverage below; silence alone does not establish a quiet crossing.</div>'}</section><details class="details"><summary>Coverage & scoring notes · ${t.gaps.filter((g) => (g.end ?? t.endedAt!) - g.start > 0).length} interruptions</summary><p>New trips use the displayed penalty rules and daily rewards. Missing or ambiguous coverage is unscored. Old saved trips retain their original rules.</p>${
     t.gaps
       .filter((g) => (g.end ?? t.endedAt!) - g.start > 0)
       .map(
@@ -312,7 +326,7 @@ function reportView() {
   }<p>Entirely missed zones cannot be inferred from missing GPS. “Review” and “Near marked corner” describe context, not whether a honk was justified. AI and spectral scores are similarity evidence, not ownership probabilities. Real-world accuracy is not yet measured. Individual events can fall back to Spectral matching when AI evidence is unavailable.</p></details><div class="report-actions">${button("Back to overview " + icon("arrow"), "home", "primary")}${button("Export report JSON", "export", "outline")}</div>`;
 }
 function historyView() {
-  return `<div class="page-heading"><p class="eyebrow">SAVED ON THIS DEVICE</p><h1>Every trip, a little insight.</h1><p>Your local journey log. Clearing browser data removes these reports and your calibration.</p></div><section class="card">${history.length ? history.map((t) => `<button class="history-row" data-action="report-${t.id}"><span class="icon-tile">${icon(t.mode === "live" ? "pin" : "play")}</span><span><strong>${date(t.startedAt)}</strong><small>${t.mode === "live" ? "Real trip" : t.mode === "demo-mic" ? "Demo · real microphone" : "Demo · simulated audio"} · ${clock((t.endedAt ?? t.startedAt) - t.startedAt)}</small></span><span class="history-points">${scoreTrip(t).totalPoints} pts</span>${icon("chevron")}</button>`).join("") : `<div class="empty">${icon("history")}<h2>A fresh start.</h2><p>Your first report will appear here after you end a trip.</p>${button("Back to overview", "home", "outline")}</div>`}</section>`;
+  return `<div class="page-heading"><p class="eyebrow">SAVED ON THIS DEVICE</p><h1>Every trip, a little insight.</h1><p>Your local journey log. Clearing browser data removes these reports and your calibration.</p></div><section class="card">${history.length ? history.map((t) => `<button class="history-row" data-action="report-${t.id}"><span class="icon-tile">${icon(t.mode === "live" ? "pin" : "play")}</span><span><strong>${date(t.startedAt)}</strong><small>${t.mode === "live" ? "Real trip" : t.mode === "demo-mic" ? "Demo · real microphone" : "Demo · simulated audio"} · ${clock((t.endedAt ?? t.startedAt) - t.startedAt)}</small></span><span class="history-points">${t.scoringVersion === 2 ? `${programPenalties(t).length} penalties` : `${scoreTrip(t).totalPoints} pts`}</span>${icon("chevron")}</button>`).join("") : `<div class="empty">${icon("history")}<h2>A fresh start.</h2><p>Your first report will appear here after you end a trip.</p>${button("Back to overview", "home", "outline")}</div>`}</section>`;
 }
 function fail(e: unknown) {
   error = e instanceof Error ? e.message : String(e);
@@ -429,6 +443,7 @@ async function action(a: string) {
         noiseEmbedding = undefined;
         samples = [undefined, undefined, undefined];
       }
+      demoAfterCalibration = false;
       if (a === "history") history = await storage.tripHistory();
       render();
     } else if (a === "enable-mic" || a === "resume-mic") {
@@ -467,7 +482,9 @@ async function action(a: string) {
         calibrateAndStart = false;
         busy = false;
         notice = "Calibration saved. Your trip is starting.";
-        await startTrip("live");
+        const nextMode = demoAfterCalibration ? "demo-mic" : "live";
+        demoAfterCalibration = false;
+        await startTrip(nextMode);
         return;
       }
       busy = false;
@@ -480,7 +497,15 @@ async function action(a: string) {
         : "Calibration saved. Your phone is ready for a trip.";
       render();
     } else if (a === "start") await startTrip("live");
-    else if (a === "demo")
+    else if (a === "landing-demo") {
+      if (!calibration) {
+        await action("calibrate-start");
+        demoAfterCalibration = true;
+        notice =
+          "Calibrate your horn, then Save & Start Trip opens the moving demo without GPS.";
+        render();
+      } else await startTrip("demo-mic");
+    } else if (a === "demo")
       await startTrip(demoAudio === "scripted" ? "demo-scripted" : "demo-mic");
     else if (a === "retry-gps") startGps();
     else if (a === "end") await endTrip();
@@ -500,7 +525,12 @@ async function action(a: string) {
         new Blob(
           [
             JSON.stringify(
-              { ...report, scoredCrossings: scoreCrossings(report) },
+              {
+                ...report,
+                ...(report.scoringVersion === 2
+                  ? { penalties: programPenalties(report) }
+                  : { scoredCrossings: scoreCrossings(report) }),
+              },
               null,
               2,
             ),
@@ -602,7 +632,10 @@ async function startTrip(mode: TripMode) {
     }
     const at = Date.now();
     engine = new TripEngine(selectedZones, mode, at);
-    engine.trip.repeatPenalty = settings.repeatPenalty !== false;
+    engine.trip.scoringVersion = 2;
+    settings.scoreTimeZone ??= Intl.DateTimeFormat().resolvedOptions().timeZone;
+    await storage.saveSettings(settings);
+    engine.trip.repeatPenalty = true;
     ai.clear();
     if (mode !== "demo-scripted" && ai.ready && personalized())
       engine.trip.detector = "YAMNet + personal matching";
@@ -820,6 +853,8 @@ async function init() {
       storage.latestTrip(),
     ]);
     settings = (await storage.loadSettings()) ?? settings;
+    settings.scoreTimeZone ??= Intl.DateTimeFormat().resolvedOptions().timeZone;
+    await storage.saveSettings(settings);
     history = await storage.tripHistory();
   } catch {
     error =
@@ -828,3 +863,21 @@ async function init() {
   render();
 }
 void init();
+
+// Recompute closed-day awards without replaying the landing animations.
+setInterval(() => {
+  if (page !== "home") return;
+  const totals = programLedger(
+    history,
+    Date.now(),
+    settings.scoreTimeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+  for (const [key, value] of Object.entries({
+    penalties: totals.penalties,
+    propers: totals.points,
+    rewards: totals.rewards,
+  })) {
+    const node = app.querySelector('[data-counter="' + key + '"]');
+    if (node) node.textContent = String(value);
+  }
+}, 10000);
