@@ -1,5 +1,7 @@
 # Sonomend
 
+Live site: [sonomend.onrender.com](https://sonomend.onrender.com)
+
 A mobile-first, on-device hackathon MVP: **Calibrate & Start → Navigate + earn points → End Trip → Trip Report**. Plain TypeScript, CSS, Vite, Web Audio, Geolocation, and IndexedDB. The core needs no backend, account, paid API, cloud inference, or remote fonts. A separate optional hosted sound check is disabled by default. Audio inference and app assets run locally; optional online navigation uses free public map services.
 
 ## Run
@@ -164,4 +166,5 @@ The landing calibration flow treats repeats of your calibrated sound as Horn usi
 
 The dashboard shows the active or most recent demo's penalties and proper mapped crossings, including after reload. Demo rewards stay at zero; the real-day ledger remains separate. Two distinct horns within five seconds produce one penalty per burst; a complete mapped corner crossing with no horn produces one penalty. Unobserved crossings remain unscored.
 
-Scroll below the opening slide for the Welcome, Sam dashboard, translucent summary panel, procedural concrete texture and rough edge transition. The original landing composition is preserved. Render static hosting uses Node 24.22.0, `npm ci && npm run build`, publish directory `dist`. Core microphone/calibration/scoring work without a server; the optional hosted AI endpoint remains disabled on static hosting.
+The original front screen is restored; the second dashboard page and scroll transition have been removed. Inline calibration includes Done / Next beside Cancel. Each click records the current short sample and advances after validation. Room-mode calibration does not load or wait for the optional AI classifier.
+

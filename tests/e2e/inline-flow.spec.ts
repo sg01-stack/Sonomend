@@ -169,9 +169,7 @@ for (const mode of ["DEMO", "CALIBRATE"])
     if (mode === "DEMO") {
       await page.getByRole("button", { name: "Overview", exact: true }).click();
       await expect(page.locator("[data-counter=penalties]")).toHaveText("1");
-      await expect(
-        page.getByRole("region", { name: "Journey dashboard" }),
-      ).toContainText("YOUR LATEST DEMO");
+      await expect(page.locator(".journey-dashboard")).toHaveCount(0);
       await page.reload();
       await expect(page.locator("[data-counter=penalties]")).toHaveText("1");
     }
