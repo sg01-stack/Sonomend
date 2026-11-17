@@ -4,7 +4,7 @@ import "./landing.css";
 export const landingMarkup = (
   counters = { penalties: 0, points: 0, rewards: 0 },
 ) =>
-  `<section class="design-slide" aria-label="Sonomend introduction"><canvas class="reactive-field" aria-hidden="true"></canvas><div class="design-title"><h1><span>Sonomend.</span></h1><p><span>Peace on the pavement,<br>one decibel at a time.</span></p></div><div class="megaphone-stage" role="img" aria-label="Red and ivory megaphone surrounded by six glass capsules"></div><button class="design-calibrate" data-action="calibrate-start">CALIBRATE</button><button class="design-calibrate design-demo" data-action="landing-demo">DEMO</button><section class="design-dashboard" aria-label="Dashboard"><h2><span>Dashboard</span></h2><div class="design-cells">${["penalties", "propers", "rewards"].map((x, i) => `<div><div class="design-cell" aria-label="${x === "propers" ? "points" : x}" data-counter="${x}">${[counters.penalties, counters.points, counters.rewards][i]}</div><p><span>${x}</span></p></div>`).join("")}</div></section></section>`;
+  `<section class="design-slide" aria-label="Sonomend introduction"><canvas class="reactive-field" aria-hidden="true"></canvas><div class="design-title"><h1><span>Sonomend.</span></h1><p><span>Peace on the pavement,<br>one decibel at a time.</span></p></div><div class="megaphone-stage" role="img" aria-label="Red and ivory megaphone surrounded by six glass capsules"></div><button class="design-calibrate" data-action="landing-calibrate">CALIBRATE</button><button class="design-calibrate design-demo" data-action="landing-demo">DEMO</button><section class="design-dashboard" aria-label="Dashboard"><h2><span>Dashboard</span></h2><div class="design-cells">${["penalties", "propers", "rewards"].map((x, i) => `<div><div class="design-cell" aria-label="${x === "propers" ? "points" : x}" data-counter="${x}">${[counters.penalties, counters.points, counters.rewards][i]}</div><p><span>${x}</span></p></div>`).join("")}</div></section></section>`;
 export function mountLanding(host: HTMLElement) {
   const canvas = host.querySelector<HTMLCanvasElement>(".reactive-field")!,
     ctx = canvas.getContext("2d")!;
@@ -42,7 +42,7 @@ export function mountLanding(host: HTMLElement) {
   const draw = (now: number) => {
     if (dead) return;
     frame = requestAnimationFrame(draw);
-    if (!visible || document.hidden || now - last < 33) return;
+    if (!visible || host.inert || document.hidden || now - last < 33) return;
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     if (!reduced.matches) t += dt;

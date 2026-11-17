@@ -278,3 +278,353 @@
     500 clamp(24px, 2.8vw, 40px)/1 Inter,
     sans-serif;
 }
+/* Inline calibration retains the authored landing composition and live model. */
+.inline-calibration #app > .header,
+.inline-calibration #app > footer,
+.map-experience #app > .header,
+.map-experience #app > footer {
+  display: none;
+}
+.inline-calibration #app > main {
+  position: absolute;
+  z-index: 4;
+  top: max(73svh, 410px);
+  left: 42.35%;
+  transform: translateX(-50%);
+  width: min(230px, 29vw);
+  margin: 0;
+  padding: 0;
+  font: 12px/1.5 monospace;
+  color: #202020;
+}
+.inline-calibration[data-calibration-mode="demo-mic"] #app > main {
+  left: 56.35%;
+}
+.inline-step,
+.inline-step button,
+.inline-step small,
+.inline-calibration main .message {
+  font-family: monospace;
+}
+.inline-step-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.inline-step-heading strong,
+.inline-step small {
+  display: block;
+}
+.inline-step .step-circle {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid #8d8d8d;
+  color: #202020;
+}
+.inline-step .button {
+  font-size: 11px;
+  min-height: 30px;
+  padding: 5px 10px;
+  margin: 8px 0;
+  border-radius: 20px;
+}
+.inline-step .meter {
+  height: 3px;
+  margin: 5px 0 10px;
+}
+.inline-step p {
+  margin: 6px 0;
+}
+.inline-step small {
+  font-size: 10px;
+}
+.inline-calibration .design-calibrate[aria-expanded="true"] {
+  outline: 1px solid #4a0c2c;
+  outline-offset: 4px;
+}
+.map-experience {
+  overflow: hidden;
+}
+.map-experience .design-slide {
+  filter: blur(12px);
+  pointer-events: none;
+  transition: filter 0.7s;
+}
+.map-experience #app > main {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: auto;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #d5d5d580;
+  backdrop-filter: blur(8px);
+}
+.immersive-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 3%;
+  font: 12px/1.5 monospace;
+}
+.immersive-status .button {
+  font: 12px monospace;
+  border-radius: 30px;
+}
+.map-experience .navigation-card {
+  background: transparent;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.map-experience .navigation-card > .card-heading {
+  display: none;
+}
+.map-experience .turn-card {
+  margin: 0;
+  border-radius: 0;
+  padding: 10px 3%;
+  background: #eeeeeeaa;
+}
+.map-experience .map-wrap {
+  height: 65svh;
+  min-height: 320px;
+  border-radius: 0;
+  isolation: isolate;
+}
+.map-experience .navigation-map {
+  height: 100%;
+  border-radius: 0;
+}
+.map-experience .map-toolbar,
+.map-experience .destination-form,
+.map-experience .navigation-card > p,
+.immersive-coverage {
+  margin: 12px 3%;
+}
+.map-experience .navigation-card > p:empty {
+  display: none;
+}
+.map-experience .destination-results,
+.map-experience .route-summary {
+  margin-inline: 3%;
+}
+.pin-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 650;
+  pointer-events: none;
+}
+.pin-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.map-reveal-blur {
+  position: absolute;
+  inset: 0;
+  z-index: 640;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  background: #d5d5d530;
+  mask-image: radial-gradient(
+    circle at 50% 50%,
+    transparent var(--reveal-radius, 0%),
+    #000 calc(var(--reveal-radius, 0%) + 1%)
+  );
+}
+.pin-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 64px;
+  padding-bottom: 64px;
+}
+.map-experience .map-score {
+  z-index: 660;
+}
+@media (max-width: 600px) {
+  .inline-calibration .design-slide {
+    min-height: 960px;
+  }
+  .inline-calibration .design-calibrate {
+    top: 50%;
+  }
+  .inline-calibration .megaphone-stage {
+    top: 24%;
+    height: 24%;
+  }
+  .inline-calibration .design-dashboard {
+    top: 78%;
+    height: 19%;
+  }
+  .inline-calibration #app > main {
+    top: max(55svh, 528px);
+    left: 33.5%;
+    width: 58vw;
+  }
+  .inline-calibration[data-calibration-mode="demo-mic"] #app > main {
+    left: 66.5%;
+  }
+  .inline-step small {
+    font-size: 11px;
+  }
+  .immersive-status {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-experience .design-slide {
+    transition: none;
+  }
+}
+.map-experience main > * {
+  animation: none;
+}
+.map-experience .immersive-status {
+  min-height: 68px;
+}
+.map-experience .turn-card {
+  height: 86px;
+  box-sizing: border-box;
+}
+.inline-calibration #app > main {
+  min-height: 0;
+}
+.map-experience .turn-card {
+  color: #202020;
+}
+.map-experience .turn-card small {
+  color: #4f5653;
+}
+.map-experience .immersive-status {
+  height: 76px;
+}
+.inline-calibration,
+.map-experience {
+  padding-bottom: 0;
+}
+
+.journey-dashboard {
+  position: relative;
+  isolation: isolate;
+  width: 100vw;
+  margin: 0 0 60px;
+  min-height: 100svh;
+  padding: 80px 24px;
+  color: white;
+  background: #43474a url("/design/concrete.svg") center/cover;
+  box-shadow: 0 -30px 50px #232629;
+}
+.journey-dashboard:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -50px;
+  height: 65px;
+  background: #43474a url("/design/concrete.svg") center/cover;
+  clip-path: polygon(
+    0 45%,
+    3% 60%,
+    7% 35%,
+    12% 52%,
+    17% 30%,
+    23% 55%,
+    29% 20%,
+    36% 48%,
+    43% 26%,
+    50% 54%,
+    56% 31%,
+    63% 50%,
+    69% 19%,
+    76% 40%,
+    83% 25%,
+    90% 53%,
+    96% 30%,
+    100% 45%,
+    100% 100%,
+    0 100%
+  );
+}
+.journey-dashboard h2 {
+  font:
+    400 clamp(48px, 6vw, 88px) "Great Vibes",
+    cursive;
+  text-align: center;
+  color: white;
+  margin: 0 0 55px;
+}
+.journey-glass {
+  max-width: 650px;
+  margin: auto;
+  padding: 40px 45px;
+  border-radius: 36px;
+  background: #ffffff59;
+  backdrop-filter: blur(3px);
+  color: #171b1d;
+  box-shadow: 0 20px 50px #0002;
+}
+.journey-caption {
+  border-top: 2px solid #202020;
+  padding-top: 15px;
+  font: 12px monospace;
+  letter-spacing: 0.12em;
+}
+.journey-numbers {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 30px 0;
+}
+.journey-numbers strong,
+.journey-numbers span {
+  display: block;
+}
+.journey-numbers strong {
+  font-size: 48px;
+}
+.journey-numbers span {
+  font: 12px monospace;
+}
+
+body:has(.journey-dashboard) #app > main {
+  padding-top: 0;
+}
+@media (max-width: 600px) {
+  .journey-glass {
+    padding: 26px 22px;
+  }
+  .journey-numbers strong {
+    font-size: 36px;
+  }
+  .journey-dashboard {
+    padding-top: 70px;
+  }
+}
+@supports (animation-timeline: view()) {
+  .journey-glass {
+    animation: journey-enter linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 85%;
+  }
+  @keyframes journey-enter {
+    from {
+      transform: translateY(80px);
+      opacity: 0.2;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .journey-glass {
+    animation: none;
+  }
+}
+.journey-dashboard:before { clip-path:none; top:-85px; height:100px; mask:url('/design/edge.svg') center/100% 100% no-repeat; }

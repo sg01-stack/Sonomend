@@ -49,6 +49,30 @@ export async function mountModel(
   }[] = [];
   const reflectionTarget = new THREE.WebGLCubeRenderTarget(128);
   const reflectionCamera = new THREE.CubeCamera(0.05, 100, reflectionTarget);
+  // Neutral studio highlights contain no megaphone image when the model rests.
+  const studioTarget = new THREE.WebGLCubeRenderTarget(128);
+  const studio = new THREE.Scene();
+  studio.background = new THREE.Color(0x343a40);
+  const softboxes = [
+    [-3, 5, 4, 1.1],
+    [4, 3, 3, 0.7],
+    [1, 0, -5, 1.5],
+  ];
+  for (const [x, y, z, radius] of softboxes) {
+    const light = new THREE.Mesh(
+      new THREE.SphereGeometry(radius, 24, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    );
+    light.position.set(x, y, z);
+    studio.add(light);
+  }
+  new THREE.CubeCamera(0.05, 100, studioTarget).update(renderer, studio);
+  studio.traverse((o) => {
+    if (o instanceof THREE.Mesh) {
+      o.geometry.dispose();
+      (o.material as THREE.Material).dispose();
+    }
+  });
   let interactionUntil = 0;
   let meshCount = 0,
     capsules = 0;
@@ -64,13 +88,24 @@ export async function mountModel(
         const m = (o.material as THREE.MeshPhysicalMaterial).clone();
         m.transmission = 0;
         m.transparent = true;
-        m.opacity = 0.19;
+        m.opacity = 0.48;
         m.depthWrite = false;
         m.roughness = 0.24;
         m.metalness = 0;
         m.envMap = null;
         m.envMapIntensity = 0;
-        m.clearcoat = 0;
+        m.clearcoat = 1;
+        m.clearcoatRoughness = 0.07;
+        m.onBeforeCompile = (shader) => {
+          // Fresnel contour makes transparent edges legible against the gray field.
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <opaque_fragment>",
+            `float rim = pow(1.0 - abs(dot(normalize(normal), normalize(vViewPosition))), 1.25);
+             outgoingLight = mix(outgoingLight, vec3(0.055, 0.065, 0.075), rim * 0.8);
+             diffuseColor.a = mix(diffuseColor.a, 0.88, rim);
+             #include <opaque_fragment>`,
+          );
+        };
         o.material = m;
         m.envMap = reflectionTarget.texture;
         glass.push({
@@ -185,7 +220,13 @@ export async function mountModel(
     const dt = Math.max(0, Math.min((now - last) / 1000, 0.05));
     last = now;
     const rect = host.getBoundingClientRect();
-    if (document.hidden || rect.bottom < 0 || rect.top > innerHeight) return;
+    if (
+      document.hidden ||
+      host.closest("[inert]") ||
+      rect.bottom < 0 ||
+      rect.top > innerHeight
+    )
+      return;
     if (!reduced) mixer.update(dt);
     controls.update();
     const moving = !reduced && (action.isRunning() || now < interactionUntil);
@@ -198,10 +239,19 @@ export async function mountModel(
         (reduced ? 0 : Math.sin(wiggleTime * 1.1 + i * 0.85) * 0.035);
       g.mesh.rotation.z =
         g.rotation + (reduced ? 0 : Math.sin(wiggleTime * 0.85 + i) * 0.018);
-      g.material.envMapIntensity = reflectionBlend * 1.2;
-      g.material.metalness = reflectionBlend * 0.3;
-      g.material.roughness = 0.24 - reflectionBlend * 0.16;
-      g.material.opacity = 0.19 + reflectionBlend * 0.23;
+      const env =
+        reflectionBlend > 0.05
+          ? reflectionTarget.texture
+          : studioTarget.texture;
+      if (g.material.envMap !== env) {
+        g.material.envMap = env;
+        g.material.needsUpdate = true;
+      }
+      g.material.envMapIntensity =
+        env === studioTarget.texture ? 2.1 : 0.3 + reflectionBlend;
+      g.material.metalness = 0.75;
+      g.material.roughness = 0.06;
+      g.material.opacity = 0.6 + reflectionBlend * 0.08;
     });
     if (reflectionBlend > 0.02 && now - lastReflection > 80) {
       lastReflection = now;
@@ -227,6 +277,7 @@ export async function mountModel(
     mixer.stopAllAction();
     disposeMeshes();
     reflectionTarget.dispose();
+    studioTarget.dispose();
     renderer.dispose();
     renderer.forceContextLoss();
     renderer.domElement.remove();

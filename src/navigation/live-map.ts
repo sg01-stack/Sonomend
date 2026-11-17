@@ -49,7 +49,11 @@ export class LiveNavigation {
   private routeBusy = false;
   private selected?: L.CircleMarker;
   private redraw = false;
-  constructor(private trip: Trip) {
+  private disposePin?: () => void;
+  constructor(
+    private trip: Trip,
+    private fixedPin = false,
+  ) {
     this.element.className = "card navigation-card";
     this.element.setAttribute("aria-label", "Trip navigation");
     this.element.innerHTML = `<div class="card-heading"><div><p class="eyebrow">YOUR ROUTE + YOUR POINTS</p><h2>Trip navigation</h2></div><span class="pill">${trip.mode === "live" ? "GPS" : "Demo GPS"}</span></div>
@@ -64,7 +68,15 @@ export class LiveNavigation {
    <p class="small muted navigation-disclaimer">Beta on-screen guidance · no live traffic or offline street maps. Follow road signs and conditions. GPS loss pauses directions; horn scoring continues independently.</p>`;
     this.map = L.map(
       this.element.querySelector<HTMLElement>(".navigation-map")!,
-      { zoomControl: true, attributionControl: true },
+      {
+        zoomControl: true,
+        attributionControl: true,
+        dragging: !fixedPin,
+        keyboard: !fixedPin,
+        touchZoom: !fixedPin,
+        scrollWheelZoom: !fixedPin,
+        doubleClickZoom: !fixedPin,
+      },
     ).setView([0, 0], 2);
     this.trace.addTo(this.map);
     this.routeLine.addTo(this.map);
@@ -131,6 +143,30 @@ export class LiveNavigation {
   mount(host: HTMLElement) {
     if (this.element.parentElement === host) return;
     host.append(this.element);
+    if (this.fixedPin && !this.element.querySelector(".pin-stage")) {
+      const wrap = this.element.querySelector<HTMLElement>(".map-wrap")!;
+      wrap.classList.add("fixed-pin-map");
+      const blur = document.createElement("div");
+      blur.className = "map-reveal-blur";
+      blur.ariaHidden = "true";
+      const pin = document.createElement("div");
+      pin.className = "pin-stage";
+      pin.setAttribute("role", "img");
+      pin.setAttribute("aria-label", "Stationary location pin");
+      wrap.append(blur, pin);
+      void import("./pin")
+        .then((m) => m.mountPin(pin, () => this.disposed))
+        .then((dispose) => {
+          if (this.disposed) dispose();
+          else this.disposePin = dispose;
+        })
+        .catch(() => {
+          if (this.disposed) return;
+          blur.remove();
+          pin.classList.add("pin-fallback");
+          pin.textContent = "📍";
+        });
+    }
     if (!this.redraw) {
       this.redraw = true;
       requestAnimationFrame(() => {
@@ -172,9 +208,9 @@ export class LiveNavigation {
       const latlng: L.LatLngTuple = [latest.latitude, latest.longitude];
       if (!this.position) {
         this.position = L.circleMarker(latlng, {
-          radius: 8,
+          radius: this.fixedPin ? 0 : 8,
           color: "#fff",
-          weight: 3,
+          weight: this.fixedPin ? 0 : 3,
           fillColor: "#245ca6",
           fillOpacity: 1,
         }).addTo(this.map);
@@ -235,7 +271,9 @@ export class LiveNavigation {
           fillColor: event.review ? "#d86c42" : "#b79830",
         })
           .bindTooltip(
-            textNode(`${event.label}${event.review ? " · Review" : ""}`),
+            textNode(
+              `${trip.soundProfile === "calibrated" ? "Horn" : event.label}${event.review ? " · Review" : ""}`,
+            ),
           )
           .addTo(this.events);
       }
@@ -279,6 +317,7 @@ export class LiveNavigation {
     this.lastFixAt = latest!.at;
   }
   destroy() {
+    this.disposePin?.();
     this.disposed = true;
     this.searchAbort?.abort();
     this.routeAbort?.abort();
@@ -418,10 +457,11 @@ export class LiveNavigation {
       .addTo(this.map);
     this.setText("destination", route.destination.name);
     this.element.querySelector<HTMLElement>(".route-summary")!.hidden = false;
-    this.map.fitBounds(this.routeLine.getBounds(), {
-      padding: [30, 30],
-      maxZoom: 16,
-    });
+    if (!this.fixedPin)
+      this.map.fitBounds(this.routeLine.getBounds(), {
+        padding: [30, 30],
+        maxZoom: 16,
+      });
   }
   private clearRoute() {
     this.routeAbort?.abort();

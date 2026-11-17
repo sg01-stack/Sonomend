@@ -1,5 +1,7 @@
 import { programLedger, programPenalties } from "./program";
 let demoAfterCalibration = false;
+let inlineFlow: "live" | "demo-mic" | undefined;
+let flowGeneration = 0;
 import { landingMarkup, mountLanding } from "./landing";
 let disposeLanding: (() => void) | undefined;
 import "./style.css";
@@ -119,10 +121,55 @@ const button = (
 ) =>
   `<button class="button ${kind}" data-action="${action}" ${disabled ? "disabled" : ""}>${label}</button>`;
 
+function displayTotals() {
+  const trip = engine?.trip ?? latest;
+  if (trip?.mode.startsWith("demo")) {
+    const penalties = programPenalties(trip).length;
+    const proper = scoreCrossings(trip, true).filter(
+      (c) =>
+        c.end &&
+        !c.initialInside &&
+        !trip.gaps.some(
+          (g) => g.start < c.end! && (g.end ?? Infinity) > c.start,
+        ) &&
+        trip.zones.find((z) => z.id === c.zoneId)?.type !== "quiet zone" &&
+        trip.events.some(
+          (e) =>
+            e.label === "Likely your horn" &&
+            e.start >= c.start &&
+            e.end <= c.end!,
+        ) &&
+        !programPenalties(trip).some((p) => p.at >= c.start && p.at <= c.end!),
+    ).length;
+    return { penalties, points: proper, rewards: 0 };
+  }
+  return programLedger(
+    history,
+    Date.now(),
+    settings.scoreTimeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+}
 function shell(content: string) {
-  disposeLanding?.();
-  disposeLanding = undefined;
-  const markup = `${page === "home" ? landingMarkup(programLedger(history, Date.now(), settings.scoreTimeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)) : ""}<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
+  const showLanding =
+    page === "home" ||
+    (!!inlineFlow && (page === "calibrate" || page === "live"));
+  const oldSlide = showLanding
+    ? app.querySelector<HTMLElement>(".design-slide")
+    : null;
+  if (!oldSlide) {
+    disposeLanding?.();
+    disposeLanding = undefined;
+  }
+  document.body.classList.toggle(
+    "inline-calibration",
+    !!inlineFlow && page === "calibrate",
+  );
+  document.body.classList.toggle(
+    "map-experience",
+    !!inlineFlow && page === "live",
+  );
+  document.body.dataset.calibrationMode = inlineFlow ?? "";
+  const markup = `${showLanding ? landingMarkup(displayTotals()) : ""}${page === "home" ? journeyDashboard() : ""}<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
     ["home", "Overview", "home"],
     ["calibrate", "Calibration", "mic"],
     ["history", "Trip history", "history"],
@@ -157,13 +204,22 @@ function shell(content: string) {
       .querySelector("footer")!
       .replaceWith(next.content.querySelector("footer")!);
   } else {
-    app.innerHTML = markup;
+    const next = document.createElement("template");
+    next.innerHTML = markup;
+    if (oldSlide)
+      next.content.querySelector(".design-slide")!.replaceWith(oldSlide);
+    app.replaceChildren(next.content);
+    if (showLanding && !oldSlide)
+      disposeLanding = mountLanding(
+        app.querySelector<HTMLElement>(".design-slide")!,
+      );
   }
-  app.querySelectorAll<HTMLElement>("[data-action]").forEach((el) =>
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      void action(el.dataset.action!);
-    }),
+  app.querySelectorAll<HTMLElement>("[data-action]").forEach(
+    (el) =>
+      (el.onclick = (e) => {
+        e.preventDefault();
+        void action(el.dataset.action!);
+      }),
   );
   app
     .querySelector<HTMLSelectElement>("#demo-audio")
@@ -231,10 +287,26 @@ function shell(content: string) {
     navigation.mount(host);
     navigation.update(engine.trip, engine.available("gps"), Date.now());
   }
-  if (page === "home")
-    disposeLanding = mountLanding(
-      app.querySelector<HTMLElement>(".design-slide")!,
+  if (oldSlide) {
+    oldSlide.inert = !!inlineFlow && page === "live";
+    const totals = displayTotals();
+    ["penalties", "propers", "rewards"].forEach(
+      (key, i) =>
+        (oldSlide.querySelector('[data-counter="' + key + '"]')!.textContent =
+          String([totals.penalties, totals.points, totals.rewards][i])),
     );
+  }
+  app.querySelectorAll<HTMLButtonElement>(".design-calibrate").forEach((b) => {
+    b.disabled = page === "live" || busy || !!capture;
+    b.setAttribute(
+      "aria-expanded",
+      String(
+        page === "calibrate" &&
+          !!inlineFlow &&
+          b.classList.contains("design-demo") === (inlineFlow === "demo-mic"),
+      ),
+    );
+  });
   updateMeter();
 }
 function render() {
@@ -251,12 +323,16 @@ function render() {
     page === "home"
       ? home()
       : page === "calibrate"
-        ? calibrate()
+        ? inlineFlow
+          ? inlineCalibration()
+          : calibrate()
         : page === "live"
           ? live()
           : page === "history"
             ? historyView()
-            : reportView(),
+            : report?.soundProfile === "calibrated"
+              ? reportView().replaceAll("Likely your horn", "Horn")
+              : reportView(),
   );
 }
 function home() {
@@ -273,6 +349,23 @@ function home() {
   <section class="card ai-card"><div><p class="eyebrow">FREE · PRIVATE · PERSONAL</p><h2>Your horn, with a second check.</h2><p>YAMNet checks for horn-like sounds. Your three private sound fingerprints help decide whether the sound resembles your vehicle. Similar horns can still match.</p><small>${personalized() ? "Your personal AI fingerprint is saved on this device." : "Recalibrate with AI enabled to create your personal AI fingerprint. Existing calibration still works in Spectral matching."}</small></div><label class="checkbox"><input id="ai-enabled" type="checkbox" ${aiEnabled() ? "checked" : ""}> Use free on-device AI</label><small>Two or more separate horns within 5 seconds: one penalty per burst. No horn during a complete mapped corner or road-opening crossing: one penalty. Missing coverage is unscored. A completed tracked day with zero penalties earns 5 points; 100 points unlock 1 reward. Demo practice earns no daily points.</small></section><section class="card demo-card"><div><span class="eyebrow">TRY IT BEFORE THE ROAD</span><h2>A short route. A real rehearsal.</h2><p>60 seconds through two <strong>demo quiet zones</strong> and a marked corner. Simulated GPS; real microphone by default.</p></div><div class="demo-controls"><label for="demo-audio">Demo audio</label><select id="demo-audio"><option value="mic" ${demoAudio === "mic" ? "selected" : ""}>Real microphone (calibration required)</option><option value="scripted" ${demoAudio === "scripted" ? "selected" : ""}>Simulated audio · deterministic test</option></select><label class="checkbox"><input type="checkbox" id="dropout" ${settings.demoDropout ? "checked" : ""}> Simulate GPS dropout in first zone</label><label class="checkbox"><input type="checkbox" id="demo-repeats" ${settings.demoRepeats ? "checked" : ""} ${demoAudio !== "scripted" ? "disabled" : ""}> Simulate three separate honks (scripted audio)</label>${button(`${icon("play")} Start demo trip`, "demo", "outline", busy || !zoneReady || (demoAudio === "mic" && !calibration))}<small>${demoAudio === "mic" ? "Stay quiet in Garden; play your calibrated horn in Library." : "Clearly labeled test inputs. No microphone or real GPS used."}</small></div></section>
   <section class="card"><p class="eyebrow">OPTIONAL · PARKED ONLY</p><h2>A separate sound check</h2><p>Record and preview a short clip, then choose whether to send it to Google Gemini for general horn evidence. No trip scoring changes.</p>${button("Open optional sound check", "hosted", "outline")}</section><section class="privacy-strip">${icon("shield")}<div><strong>Trip audio stays on your device.</strong><p>Audio is processed and discarded. Fingerprints and trips stay in IndexedDB. Optional online navigation shares map areas and route coordinates with map providers. Only the separate optional sound check can upload a clip, after explicit consent.</p></div></section><details class="details"><summary>Permissions, demo zones & limitations</summary><p>Use HTTPS on your phone and allow microphone and location access. Keep the app visible and your phone mounted; do not interact while driving. Only calibrate where it is safe and permitted.</p><p>Spectral matching compares sound fingerprints. Similar horns, sirens, and other loud sounds can match. A match score is not the probability that you honked. Quiet points are a local reflection tool, not a measure of driving safety.</p><p>Bundled zones are fictional demo markers in Bengaluru, not official restrictions or inferred corners. Real trips use these markers unless you load your own zone JSON. Edit <code>public/zones.json</code> before deployment or load a file below for this session.</p><label class="file-label">Load local zones (.json)<input id="zones-file" type="file" accept=".json,application/json"></label><p>${zones.length} zones loaded. GPS must be ≤ ${MAX_ACCURACY} m accuracy and ≤ 5 seconds old. Missing coverage cannot earn points.</p></details>`;
 }
+function journeyDashboard() {
+  const totals = displayTotals(),
+    trip = engine?.trip ?? latest;
+  const isDemo = trip?.mode.startsWith("demo");
+  return `<section class="journey-dashboard" aria-label="Journey dashboard"><h2>Welcome , Sam</h2><div class="journey-glass"><p class="journey-caption">${isDemo ? "YOUR LATEST DEMO" : "YOUR JOURNEYS"}</p><div class="journey-numbers"><div><strong>${totals.penalties}</strong><span>penalties</span></div><div><strong>${totals.points}</strong><span>${isDemo ? "proper crossings" : "points"}</span></div><div><strong>${totals.rewards}</strong><span>rewards</span></div></div><p>${isDemo ? "Your demo performance, saved on this device. Practice does not advance the daily reward balance." : "A completed tracked day without penalties earns 5 points. Every 100 points unlocks one reward."}</p><p>${trip ? trip.events.filter((e) => e.label === "Likely your horn").length + " horns detected in your latest session." : "Calibrate your sound, then take your first journey."}</p><button class="button outline" data-action="${trip ? "latest" : "landing-demo"}">${trip ? "View session" : "Try demo"}</button></div></section>`;
+}
+function inlineCalibration() {
+  const next = noise === undefined ? "noise" : samples.findIndex((s) => !s);
+  const done = noise !== undefined && samples.every(Boolean);
+  return `<section class="inline-step" aria-label="Horn calibration" aria-live="polite">
+    <div class="inline-step-heading"><span class="step-circle">${done ? "✓" : next === "noise" ? "0" : Number(next) + 1}</span><div><strong>${done ? "Calibration ready" : next === "noise" ? "Background noise" : `Short honk ${Number(next) + 1}`} </strong><small>${done ? "Opening your map…" : next === "noise" ? "Keep quiet for 2 seconds." : "One brief honk during a 3-second sample."}</small></div></div>
+    ${capture ? `<p>${capture.kind === "noise" ? "Stay quiet. Sampling background…" : "Honk once now. Listening…"}</p><p id="capture-countdown"></p>` : !mic.running ? `<p>${busy ? "Allow microphone access to begin." : esc(micMessage)}</p>${button("Enable microphone / retry", "enable-mic", "outline", busy)}` : done ? button("Open map", "save-calibration", "outline", busy) : button(next === "noise" ? "Sample background · 2 sec" : `Record honk ${Number(next) + 1} · 3 sec`, `capture-${next}`, "outline", busy)}
+    <div class="meter"><div id="mic-meter"></div></div>
+    <small>Park safely. ${inlineFlow === "demo-mic" ? "Demo moves automatically; no location needed." : "Location starts after calibration."}</small>
+    ${button("Cancel", "cancel-inline", "text-button", busy && done)}
+  </section>`;
+}
 function calibrate() {
   const done = samples.every(Boolean),
     next = noise === undefined ? "noise" : samples.findIndex((s) => !s);
@@ -280,6 +373,8 @@ function calibrate() {
 }
 function live() {
   if (!engine) return "";
+  if (inlineFlow)
+    return `<div class="immersive-status"><span>${engine.trip.mode === "live" ? "LIVE TRIP" : "SIMULATED GPS · real microphone and detector"} · ${clock(Date.now() - engine.trip.startedAt)}</span>${button("End trip & see report", "end", "outline", busy)}</div><div id="live-navigation"></div><div class="immersive-coverage" role="status">${esc(micMessage)} · ${esc(gpsMessage)}${!mic.running ? button("Resume microphone", "resume-mic", "outline", busy) : ""}${engine.trip.mode === "live" && !engine.available("gps") ? button("Retry GPS permission", "retry-gps", "outline") : ""}</div>`;
   const t = engine.trip,
     elapsed = Date.now() - t.startedAt,
     scored = scoreCrossings(t),
@@ -356,6 +451,11 @@ function queueDetection(d: Detection) {
     });
     return;
   }
+  if (target.trip.soundProfile === "calibrated") {
+    if (d.label === "Likely your horn")
+      target.detection({ ...d, detectorMode: "Spectral matching" });
+    return;
+  }
   if (!ai.ready || !reference?.ai) {
     target.detection(
       spectralFallback(
@@ -414,12 +514,43 @@ async function action(a: string) {
     render();
     return;
   }
+  if (a === "cancel-inline" && page === "calibrate") {
+    if (busy && samples.every(Boolean)) return;
+    flowGeneration++;
+    clearTimeout(captureTimer);
+    capture = undefined;
+    inlineFlow = undefined;
+    demoAfterCalibration = false;
+    calibrateAndStart = false;
+    mic.stop();
+    ai.stop();
+    busy = false;
+    page = "home";
+    error = "";
+    notice = "";
+    render();
+    return;
+  }
   if (busy) return;
   if (page === "live" && !["end", "resume-mic", "retry-gps"].includes(a))
     return;
   error = "";
   notice = "";
   try {
+    if (a === "landing-calibrate" || a === "landing-demo") {
+      if (capture) return;
+      inlineFlow = a === "landing-demo" ? "demo-mic" : "live";
+      demoAfterCalibration = inlineFlow === "demo-mic";
+      calibrateAndStart = true;
+      page = "calibrate";
+      noise = undefined;
+      noiseEmbedding = undefined;
+      samples = [undefined, undefined, undefined];
+      render();
+      window.scrollTo({ top: 0, behavior: "instant" });
+      await action("enable-mic");
+      return;
+    }
     if (
       a === "hosted" ||
       a === "home" ||
@@ -433,6 +564,7 @@ async function action(a: string) {
       }
       disposeSoundCheck?.();
       disposeSoundCheck = undefined;
+      inlineFlow = undefined;
       mic.stop();
       ai.stop();
       micMessage = "Microphone off";
@@ -449,12 +581,18 @@ async function action(a: string) {
     } else if (a === "enable-mic" || a === "resume-mic") {
       busy = true;
       render();
+      const generation = ++flowGeneration;
       try {
         await mic.start(aiEnabled());
+        if (generation !== flowGeneration) return;
         if (aiEnabled() && mic.pcmAvailable) await ai.start();
+      } catch (e) {
+        if (generation === flowGeneration) throw e;
       } finally {
-        busy = false;
-        render();
+        if (generation === flowGeneration) {
+          busy = false;
+          render();
+        }
       }
     } else if (a.startsWith("capture-")) startCapture(a.slice(8));
     else if (a === "save-calibration") {
@@ -478,11 +616,12 @@ async function action(a: string) {
       render();
       await storage.saveCalibration(c);
       calibration = c;
-      if (calibrateAndStart) {
+      if (calibrateAndStart || inlineFlow) {
         calibrateAndStart = false;
         busy = false;
         notice = "Calibration saved. Your trip is starting.";
-        const nextMode = demoAfterCalibration ? "demo-mic" : "live";
+        const nextMode =
+          inlineFlow ?? (demoAfterCalibration ? "demo-mic" : "live");
         demoAfterCalibration = false;
         await startTrip(nextMode);
         return;
@@ -497,15 +636,7 @@ async function action(a: string) {
         : "Calibration saved. Your phone is ready for a trip.";
       render();
     } else if (a === "start") await startTrip("live");
-    else if (a === "landing-demo") {
-      if (!calibration) {
-        await action("calibrate-start");
-        demoAfterCalibration = true;
-        notice =
-          "Calibrate your horn, then Save & Start Trip opens the moving demo without GPS.";
-        render();
-      } else await startTrip("demo-mic");
-    } else if (a === "demo")
+    else if (a === "demo")
       await startTrip(demoAudio === "scripted" ? "demo-scripted" : "demo-mic");
     else if (a === "retry-gps") startGps();
     else if (a === "end") await endTrip();
@@ -598,11 +729,14 @@ function startCapture(kind: string) {
               )
             : undefined;
           samples[result.kind] = { ...spectral, ai: modelFrame };
-          if (aiEnabled() && !modelFrame)
+          if (aiEnabled() && !modelFrame && !inlineFlow)
             notice =
               "Spectral sample captured. AI could not clearly recognize this horn; redo it for AI matching, or save all three samples for Spectral matching.";
         }
-        render();
+        if (inlineFlow && samples.every(Boolean)) {
+          notice = "";
+          await action("save-calibration");
+        } else render();
       } catch (e) {
         fail(e);
       }
@@ -633,6 +767,7 @@ async function startTrip(mode: TripMode) {
     const at = Date.now();
     engine = new TripEngine(selectedZones, mode, at);
     engine.trip.scoringVersion = 2;
+    if (inlineFlow) engine.trip.soundProfile = "calibrated";
     settings.scoreTimeZone ??= Intl.DateTimeFormat().resolvedOptions().timeZone;
     await storage.saveSettings(settings);
     engine.trip.repeatPenalty = true;
@@ -654,12 +789,15 @@ async function startTrip(mode: TripMode) {
             mode: "Spectral matching",
           }
         : calibration!;
-    detector = new SpectralDetector(c, settings.matchThreshold);
+    detector = new SpectralDetector(
+      c,
+      inlineFlow ? 0.82 : settings.matchThreshold,
+    );
     engine.coverage("mic", mode === "demo-scripted" || !!mic.running, at);
     if (mode === "live") startGps();
     else engine.fix(demoFix(0, at));
     navigation?.destroy();
-    navigation = new LiveNavigation(engine.trip);
+    navigation = new LiveNavigation(engine.trip, !!inlineFlow);
     page = "live";
     notice = "";
     busy = false;
@@ -784,6 +922,7 @@ async function endTrip() {
   void wakeLock?.release().catch(() => {});
   wakeLock = undefined;
   page = "report";
+  inlineFlow = undefined;
   savePending = report;
   try {
     await persistTrip(report);

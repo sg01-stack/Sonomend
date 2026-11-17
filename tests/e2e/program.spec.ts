@@ -57,7 +57,9 @@ test("Demo uses calibrated microphone and simulated GPS without requesting locat
     db.close();
   });
   await page.reload();
-  await page.getByRole("button", { name: "DEMO", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Start demo trip", exact: true })
+    .click();
   await expect(
     page.getByText("SIMULATED GPS · real microphone and detector", {
       exact: false,
@@ -125,18 +127,17 @@ test("capsules wiggle but reflections settle after the reveal and resume on inte
   await expect(stage).toHaveAttribute("data-reflection", "moving");
 });
 
-test("Demo without calibration opens calibration and explains the simulated route", async ({
+test("Demo opens inline calibration and explains the simulated route", async ({
   page,
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "DEMO", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Meet your horn." }),
+    page.getByRole("region", { name: "Horn calibration" }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      "Calibrate your horn, then Save & Start Trip opens the moving demo without GPS.",
-      { exact: true },
-    ),
+    page.getByText("Demo moves automatically; no location needed.", {
+      exact: false,
+    }),
   ).toBeVisible();
 });

@@ -74,6 +74,7 @@ export interface ScoredCrossing extends Crossing {
 export type TripMode = "live" | "demo-mic" | "demo-scripted";
 export type DetectorMode = "Spectral matching" | "YAMNet + personal matching";
 export interface Trip {
+  soundProfile?: "calibrated";
   scoringVersion?: 2;
   id: string;
   startedAt: number;

@@ -8,6 +8,8 @@ The GitHub Desktop clone at `C:\Users\sgs34\Documents\GitHub\Sonomend` is the wo
 
 ## Implemented
 
+- Latest landing revision: stronger transparent capsule contours and neutral white studio highlights, with megaphone reflections only during reveal/interaction. One-step inline calibration under either landing button, immediate mic request, automatic save/start after three accepted samples, and authored pin-only GLB over the persistent live map. Pin stays centered; map follows real or simulated positions. Original map placeholder/video is not used. Street tiles retain per-trip opt-in.
+
 - Existing vehicle calibration, bundled local YAMNet/personal matching, coverage-aware trip scoring, history and integrated opt-in navigation.
 - Separate optional parked sound check: three-second recording, local playback, per-send consent, cancel/clear, interruption/late-permission cleanup and safe result display. No scoring changes.
 - Node and Worker API adapters, bounded WAV/body validation, origin checks, server-only key, timeouts, provider error handling and per-instance request limits.
@@ -43,3 +45,5 @@ First viewport follows the supplied screenshot: Sonomend title/tagline at upper 
 ## Current scoring and visual revision
 
 New trips save scoringVersion 2. Two or more distinct likely horns in five seconds produce one penalty per burst, globally. Complete mapped corner/road-opening crossings with no detection produce one penalty; missing/ambiguous coverage is unscored. Completed tracked real days with zero penalties earn five points, each 100 points unlocks one local reward. Legacy history is preserved. Demo uses calibrated microphone and simulated GPS; practice rewards are excluded. Landing counters derive from saved real trips and refresh across day boundaries. Demo's last practice result is shown separately below the landing. Capsules wiggle gently; reflections turn on during reveal/interaction and fade when the megaphone/view settles.
+
+Latest room-demo release: calibrated spectral sound matching bypasses general sound classification for landing-started sessions; latest demo penalties/proper crossings appear in the landing and second-page dashboard and survive reload. Added procedural concrete second section and rough scroll edge. Original user map ZIP pin hash matches the integrated GLB. Render static deployment preparation uses Node 24.22.0, npm ci/build, dist. Physical room/phone validation is still needed; synthetic audio tests do not establish real-world accuracy.

@@ -28,6 +28,8 @@ See [HACKATHON.md](HACKATHON.md) for the demo script, release handoff and remain
 
 ## Use the MVP
 
+The landing **CALIBRATE** and **DEMO** buttons now request the microphone immediately and keep calibration inline beneath the selected button. Capture the two-second background and three three-second honk samples, one step at a time. The third accepted sample saves automatically and opens the map with the supplied pin drop and circular reveal. CALIBRATE follows real GPS; DEMO moves along its simulated route without location permission. The pin stays centered as the map moves. Street tiles still require **Enable online map** for each trip. Cancel releases the microphone, including permission granted after cancellation. The separate controls below the landing remain available for saved-profile trips and diagnostics.
+
 1. Open the app over **HTTPS** on Android Chrome. Localhost is allowed for desktop development; an ordinary phone-to-laptop HTTP LAN URL is **not** a secure context for microphone access.
 2. While safely parked where brief honking is permitted, choose **Calibrate & Start** and enable the mic. Take a two-second background sample, then three separate three-second samples, honking once in each. Samples can be redone. **Save & Start Trip** saves the fingerprints and immediately opens the trip with GPS navigation. Quiet/no-signal samples are rejected. The **Calibration** tab still supports saving without starting a trip.
 3. Allow location. On future trips, **Start a trip** uses the saved calibration. The map opens automatically with your position, quiet zones, route trace, horn markers, and points. Enable online maps and choose a destination while parked (details below). Keep the app foregrounded and phone mounted. The app requests a screen wake lock where available but does not depend on it. Avoid interacting while driving.
@@ -155,3 +157,11 @@ Overview → Open optional sound check records a separate three-second WAV, allo
 The opening viewport follows the supplied annotated screenshot. Only gray texture and a pink cursor trail are used in its background. Text reveals rightward, the dashboard rises, and its labels reveal downward. The user's GLB is rendered as separate mesh objects, with no poster/video or backdrop rectangle. Capsules gently wiggle. A local cube reflection capture is visible during megaphone reveal/view movement and fades away when it settles; the wiggle alone does not reactivate reflections. This is a web material adjustment; the original .blend and GLB remain unchanged.
 
 The 2.5-second authored reveal starts as soon as the GLB loads and holds the final pose. Drag the scene to rotate it; focus it and use arrow keys for rotation, Enter to replay, or Escape to restore the view. Reduced-motion preference starts at the final pose and suppresses animated text/trail. Three.js and fonts are served locally. The screenshot does not include editable font metadata, so Inter/Great Vibes are approximate matches.
+
+## Room-demo release
+
+The landing calibration flow treats repeats of your calibrated sound as Horn using local spectral matching (0.82 similarity threshold). General sound AI does not downgrade these sessions. Other sounds are ignored instead of appearing as uncertain events. This is a calibrated sound demonstration, not validated horn ownership detection.
+
+The dashboard shows the active or most recent demo's penalties and proper mapped crossings, including after reload. Demo rewards stay at zero; the real-day ledger remains separate. Two distinct horns within five seconds produce one penalty per burst; a complete mapped corner crossing with no horn produces one penalty. Unobserved crossings remain unscored.
+
+Scroll below the opening slide for the Welcome, Sam dashboard, translucent summary panel, procedural concrete texture and rough edge transition. The original landing composition is preserved. Render static hosting uses Node 24.22.0, `npm ci && npm run build`, publish directory `dist`. Core microphone/calibration/scoring work without a server; the optional hosted AI endpoint remains disabled on static hosting.

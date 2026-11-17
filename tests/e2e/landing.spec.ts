@@ -26,9 +26,9 @@ test("annotated landing uses gray field, pink pointer trail and supplied GLB", a
     "rewards",
   ]);
   await page.getByRole("button", { name: "CALIBRATE", exact: true }).click();
-  await expect(page.locator(".design-slide")).toHaveCount(0);
+  await expect(page.locator(".design-slide")).toHaveCount(1);
   await expect(
-    page.getByRole("heading", { name: "Meet your horn." }),
+    page.getByRole("region", { name: "Horn calibration" }),
   ).toBeVisible();
 });
 test("reduced motion keeps reveals still and mobile has no horizontal overflow", async ({
