@@ -58,3 +58,8 @@ Live provider follow-up, 17 November 2026: desktop Chrome fetches from localhost
 ## Still requires a physical Android device
 
 Fresh recordings of the calibrated horn, different horns, sirens, cabin noise, device placement, GPS drift, lock/call interruptions, battery usage, and real-world false-positive/missed-event rates. Follow `README.md`'s phone checklist. Similar horns may match; neither AI nor a repeated pattern establishes who honked or whether it was necessary. Deployment to a public HTTPS host has not been performed.
+
+## Annotated landing and interactive 3D — 17 November 2026
+
+Final release check passed: 43 unit tests, 11 backend tests and 20 production-browser tests. New coverage verifies gray-only field before pointer input, pink trail, six GLB capsule nodes, no image/video element, automatic reveal advancing to 2.5 seconds, keyboard rotation/replay, reduced motion, calibration navigation and mobile overflow. Desktop render visually checked. Source GLB hash matches the user asset; runtime capsule materials disable transmission to avoid the megaphone image in the glass. No Blender source edits or public deployment.
+

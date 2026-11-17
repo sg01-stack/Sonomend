@@ -1,3 +1,5 @@
+import { landingMarkup, mountLanding } from "./landing";
+let disposeLanding: (() => void) | undefined;
 import "./style.css";
 import { mountSoundCheck } from "./hosted/page";
 let disposeSoundCheck: (() => void) | undefined;
@@ -116,7 +118,9 @@ const button = (
   `<button class="button ${kind}" data-action="${action}" ${disabled ? "disabled" : ""}>${label}</button>`;
 
 function shell(content: string) {
-  const markup = `<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
+  disposeLanding?.();
+  disposeLanding = undefined;
+  const markup = `${page === "home" ? landingMarkup() : ""}<header class="header"><a href="#" class="brand" data-action="home"><span class="brand-icon">${icon("sound")}</span>sonomend<span class="brand-dot">.</span></a><nav aria-label="Main navigation">${[
     ["home", "Overview", "home"],
     ["calibrate", "Calibration", "mic"],
     ["history", "Trip history", "history"],
@@ -225,6 +229,10 @@ function shell(content: string) {
     navigation.mount(host);
     navigation.update(engine.trip, engine.available("gps"), Date.now());
   }
+  if (page === "home")
+    disposeLanding = mountLanding(
+      app.querySelector<HTMLElement>(".design-slide")!,
+    );
   updateMeter();
 }
 function render() {

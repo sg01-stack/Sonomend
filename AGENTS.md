@@ -4,7 +4,7 @@
 
 This repository is the active Sonomend product source. Continue the existing application; do not rebuild it from scratch. Read PROJECT_STATUS.md, README.md and package.json before substantial work. Check git status and preserve user changes. The continuation archive under Documents/Codex is historical, not the source of truth.
 
-Use plain TypeScript, CSS and Vite. Keep the existing mobile layout and CSS variables easy to restyle. Do not introduce a new framework without a concrete requirement. No Figma/Blender assets have been supplied for this product; do not assume unrelated local assets belong to it.
+Use plain TypeScript, CSS and Vite. Keep the existing mobile layout and CSS variables easy to restyle. Do not introduce a new framework without a concrete requirement. The user supplied an annotated screenshot and megaphone GLB on 17 November 2026. Preserve its layout, wording and approved directional reveals. Background is ONLY gray texture and pink cursor trail; no pink rectangles. Do not assume unrelated local assets belong to it.
 
 Implement requested changes, run relevant checks, update documentation, and report actual results and remaining blockers. Do not describe the full product as finished merely because tests pass. Keep a local commit checkpoint after completing a verified change when consistent with the user's request; never force-push or reset away work. External publication/access changes require authorization from the conversation, not this file.
 

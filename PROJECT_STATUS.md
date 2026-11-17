@@ -24,7 +24,7 @@ The GitHub Desktop clone at `C:\Users\sgs34\Documents\GitHub\Sonomend` is the wo
 
 - Configure an eligible free-tier provider project/model and server secret securely if the optional hosted feature is wanted. No live Google inference has been verified; no billing enabled.
 - Physical Android/vehicle validation: fresh horn/distractor samples, noise, GPS drift, real directions, interruptions and battery behavior. Simulation results are not real-world accuracy.
-- Supply intended Figma/Blender assets for a custom visual pass.
+- Annotated screenshot and megaphone GLB supplied and integrated. Editable Figma source/font specifications are not supplied; current script font is a locally bundled visual approximation.
 - Choose/configure a public HTTPS deployment and verify the deployed application. No public deployment is claimed.
 - Command-line GitHub authentication currently fails in the managed credential helper. GitHub Desktop may provide an independent authenticated push path; confirm remote state after any push. Do not claim local commits are synced.
 
@@ -33,3 +33,9 @@ The GitHub Desktop clone at `C:\Users\sgs34\Documents\GitHub\Sonomend` is the wo
 43 unit tests, 11 Node API tests and 17 production-browser tests passed before merge. Model integrity/build and Worker deployment dry run passed. Separate actual browser requests to OpenStreetMap tiles, Nominatim search and OSRM routing succeeded. The desktop clone is revalidated when preparing the active development checkpoint.
 
 Desktop-clone validation completed 17 November 2026: npm ci, npm run check (43 unit + 11 backend + 17 browser tests), strict build/model integrity, and Worker dry run all passed. Local frontend and API HTTP checks passed; hosted AI reports disabled as expected.
+
+## Approved landing design
+
+First viewport follows the supplied screenshot: Sonomend title/tagline at upper left; authored megaphone + six glass capsules in central marked area; CALIBRATE below; burgundy dashboard at lower right with unchanged labels. Slow clipped title/tagline reveal rightward, dashboard reveal upward, labels downward. Background is gray crosshatch with fading pink pointer trail only (rectangles explicitly rejected). GLB bytes are unchanged; its 2.5-second animation plays once and holds. Reduced motion disables the reveal and trail. Existing app controls remain below the opening viewport; calibration is wired to the existing flow. Inter and Great Vibes fonts are served locally, approximating the screenshot pending editable Figma/font details.
+
+3D revision: no poster/video or rectangular backdrop. Separate imported meshes retained; capsules use transparent non-transmissive material to avoid the megaphone image/reflection. Drag rotates view; arrow keys rotate, Enter replays and Escape resets. First-frame negative-delta clamp fixed; automatic reveal and hold now tested.

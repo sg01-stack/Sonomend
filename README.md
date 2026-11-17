@@ -171,3 +171,8 @@ See `VERIFICATION.md` for the checks actually run and their limits.
 ## Optional parked sound check
 
 Overview → Open optional sound check records a separate three-second WAV, allows local playback, and uploads only after explicit per-send consent. Clearing, hiding or leaving the page releases the microphone and clears the clip. It never changes calibration, events or points. Static hosts safely show the feature as unavailable. See [HOSTED_AI.md](HOSTED_AI.md) for server setup, privacy, limits and current verification.
+## Landing design and 3D controls
+
+The opening viewport follows the supplied annotated screenshot. Only gray texture and a pink cursor trail are used in its background. Text reveals rightward, the dashboard rises, and its labels reveal downward. The user's GLB is rendered as separate mesh objects, with no poster/video or backdrop rectangle. Six capsule materials use transparent surfaces without screen-space transmission, preventing the megaphone image from appearing in the glass. This is a web material adjustment; the original .blend and GLB remain unchanged.
+
+The 2.5-second authored reveal starts as soon as the GLB loads and holds the final pose. Drag the scene to rotate it; focus it and use arrow keys for rotation, Enter to replay, or Escape to restore the view. Reduced-motion preference starts at the final pose and suppresses animated text/trail. Three.js and fonts are served locally. The screenshot does not include editable font metadata, so Inter/Great Vibes are approximate matches.
