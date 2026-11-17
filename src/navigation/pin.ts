@@ -64,6 +64,14 @@ export async function mountPin(host: HTMLElement, isDisposed: () => boolean) {
       ? 5
       : Math.min(5, Math.max(0, (now - started) / 1000));
     mixer.setTime(seconds);
+    const scale = THREE.MathUtils.lerp(
+      0.7,
+      0.24,
+      THREE.MathUtils.smoothstep(seconds, 0, 3.2),
+    );
+    gltf.scene.scale.setScalar(scale);
+    gltf.scene.position.y =
+      (1 - scale) * Math.max(0, 2.65 * (1 - seconds / 3.2));
     const progress = THREE.MathUtils.smoothstep(seconds, 3.2, 4.67);
     // Mask the blur overlay with one expanding hole, aligned with the fixed pin tip.
     host.parentElement!.style.setProperty(

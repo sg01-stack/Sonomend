@@ -146,6 +146,11 @@ export class LiveNavigation {
     if (this.fixedPin && !this.element.querySelector(".pin-stage")) {
       const wrap = this.element.querySelector<HTMLElement>(".map-wrap")!;
       wrap.classList.add("fixed-pin-map");
+      const streets = this.node<HTMLButtonElement>("online");
+      streets.classList.add("map-streets");
+      streets.title =
+        "Enable online streets (OpenStreetMap receives the viewed area)";
+      wrap.append(streets);
       const blur = document.createElement("div");
       blur.className = "map-reveal-blur";
       blur.ariaHidden = "true";

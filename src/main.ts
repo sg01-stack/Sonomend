@@ -150,6 +150,10 @@ function displayTotals() {
   );
 }
 function shell(content: string) {
+  document.body.classList.toggle(
+    "landing-only",
+    page === "home" && !new URLSearchParams(location.search).has("tools"),
+  );
   const showLanding =
     page === "home" ||
     (!!inlineFlow && (page === "calibrate" || page === "live"));
@@ -368,7 +372,7 @@ function calibrate() {
 function live() {
   if (!engine) return "";
   if (inlineFlow)
-    return `<div class="immersive-status"><span>${engine.trip.mode === "live" ? "LIVE TRIP" : "SIMULATED GPS · real microphone and detector"} · ${clock(Date.now() - engine.trip.startedAt)}</span>${button("End trip & see report", "end", "outline", busy)}</div><div id="live-navigation"></div><div class="immersive-coverage" role="status">${esc(micMessage)} · ${esc(gpsMessage)}${!mic.running ? button("Resume microphone", "resume-mic", "outline", busy) : ""}${engine.trip.mode === "live" && !engine.available("gps") ? button("Retry GPS permission", "retry-gps", "outline") : ""}</div>`;
+    return `<div class="immersive-status"><span>${engine.trip.mode === "live" ? "LIVE TRIP" : "SIMULATED GPS · real microphone and detector"} · ${clock(Date.now() - engine.trip.startedAt)}</span>${button("×", "end", "outline map-close", busy)}</div><div id="live-navigation"></div><div class="immersive-coverage" role="status">${esc(micMessage)} · ${esc(gpsMessage)}${!mic.running ? button("Resume microphone", "resume-mic", "outline", busy) : ""}${engine.trip.mode === "live" && !engine.available("gps") ? button("Retry GPS permission", "retry-gps", "outline") : ""}</div>`;
   const t = engine.trip,
     elapsed = Date.now() - t.startedAt,
     scored = scoreCrossings(t),
@@ -915,7 +919,7 @@ async function endTrip() {
   }
   void wakeLock?.release().catch(() => {});
   wakeLock = undefined;
-  page = "report";
+  page = inlineFlow ? "home" : "report";
   inlineFlow = undefined;
   savePending = report;
   try {

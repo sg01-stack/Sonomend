@@ -168,3 +168,5 @@ The dashboard shows the active or most recent demo's penalties and proper mapped
 
 The original front screen is restored; the second dashboard page and scroll transition have been removed. Inline calibration includes Done / Next beside Cancel. Each click records the current short sample and advances after validation. Room-mode calibration does not load or wait for the optional AI classifier.
 
+
+The public home is now the single 3D screen. Navigation opens in a square overlay with a smaller pin; close it to save the trip and return to the dashboard. Advanced diagnostic controls are available only at `/?tools`.

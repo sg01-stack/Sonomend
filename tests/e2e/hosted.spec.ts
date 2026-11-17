@@ -3,7 +3,7 @@ async function open(page: Page, enabled = true) {
   await page.route("**/api/hosted/status", (r) =>
     r.fulfill({ json: { enabled } }),
   );
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.getByRole("button", { name: "Open optional sound check" }).click();
 }
 async function microphone(page: Page, delayed = false) {

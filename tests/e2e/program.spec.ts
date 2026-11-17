@@ -23,7 +23,7 @@ test("Demo uses calibrated microphone and simulated GPS without requesting locat
       },
     });
   });
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((r, j) => {
       const q = indexedDB.open("sonomend", 1);
@@ -76,7 +76,7 @@ test("Demo uses calibrated microphone and simulated GPS without requesting locat
 test("daily counters survive reload and unlock one reward at 100 points", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.evaluate(async () => {
     const q = indexedDB.open("sonomend", 1);
     const db = await new Promise<IDBDatabase>(
@@ -114,7 +114,7 @@ test("daily counters survive reload and unlock one reward at 100 points", async 
 test("capsules wiggle but reflections settle after the reveal and resume on interaction", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?tools");
   const stage = page.locator(".megaphone-stage");
   await expect(stage).toHaveAttribute("data-ready", "true");
   await expect(stage).toHaveAttribute("data-wiggle", "on");
@@ -130,7 +130,7 @@ test("capsules wiggle but reflections settle after the reveal and resume on inte
 test("Demo opens inline calibration and explains the simulated route", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.getByRole("button", { name: "DEMO", exact: true }).click();
   await expect(
     page.getByRole("region", { name: "Horn calibration" }),

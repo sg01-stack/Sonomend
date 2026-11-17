@@ -35,7 +35,6 @@ async function devices(page: Page, delayed = false) {
     });
   }, delayed);
   await page.goto("/");
-  await page.getByLabel("Use free on-device AI").uncheck();
 }
 
 for (const mode of ["DEMO", "CALIBRATE"])
@@ -98,6 +97,8 @@ for (const mode of ["DEMO", "CALIBRATE"])
       await page.getByRole("button", { name: "Open map", exact: true }).click();
     }
     await expect(page.locator("body")).toHaveClass(/map-experience/);
+    const square = await page.locator(".map-wrap").boundingBox();
+    expect(Math.abs(square!.width - square!.height)).toBeLessThan(1);
     await expect(page.locator(".pin-stage")).toHaveAttribute(
       "data-ready",
       "true",
@@ -156,7 +157,7 @@ for (const mode of ["DEMO", "CALIBRATE"])
       }
       await expect(page.locator(".map-score strong")).toHaveText("1");
     }
-    await page.getByRole("button", { name: "End trip & see report" }).click();
+    await page.getByRole("button", { name: "×" }).click();
     await expect(page.locator(".pin-stage")).toHaveCount(0);
     expect(
       await page.evaluate(
@@ -167,7 +168,6 @@ for (const mode of ["DEMO", "CALIBRATE"])
       mode === "DEMO" ? 0 : 1,
     );
     if (mode === "DEMO") {
-      await page.getByRole("button", { name: "Overview", exact: true }).click();
       await expect(page.locator("[data-counter=penalties]")).toHaveText("1");
       await expect(page.locator(".journey-dashboard")).toHaveCount(0);
       await page.reload();

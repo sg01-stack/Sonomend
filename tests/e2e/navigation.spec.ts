@@ -37,7 +37,7 @@ async function devices(page: Page) {
   });
 }
 async function seed(page: Page) {
-  await page.goto("/");
+  await page.goto("/?tools");
   await page
     .getByRole("button", { name: "Calibrate & Start", exact: true })
     .waitFor();
@@ -150,7 +150,7 @@ test("Calibrate & Start saves once, starts one trip and automatically opens GPS 
   page,
 }) => {
   await devices(page);
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.getByLabel("Use free on-device AI").uncheck();
   await page
     .getByRole("button", { name: "Calibrate & Start", exact: true })

@@ -9,7 +9,7 @@ test("bundled model runs real inference, rejects tampering, and makes no externa
     if (new URL(r.url()).origin !== new URL(baseURL!).origin)
       foreign.push(r.url());
   });
-  await page.goto("/");
+  await page.goto("/?tools");
   const result = await page.evaluate(async () => {
     const manifest = await (await fetch("./models/yamnet.json")).json();
     const w = new Worker("./ai-runtime/worker.js");
@@ -123,7 +123,7 @@ test("personal AI calibration, live capture and scored evidence survive reload",
       },
     });
   });
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await expect(
@@ -206,7 +206,7 @@ test("a failed model load keeps spectral calibration usable and clearly labeled"
       },
     });
   });
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await expect(page.getByText(/Using Spectral matching\./)).toBeVisible();
@@ -219,7 +219,7 @@ test("new repeat rule persists and scripted demo cannot earn daily rewards", asy
   page,
 }) => {
   await page.clock.install();
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.selectOption("#demo-audio", "scripted");
   await page
     .getByLabel("Simulate three separate honks (scripted audio)")

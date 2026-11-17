@@ -44,7 +44,7 @@ test("mobile overview is responsive and permission errors can be retried", async
   page,
 }) => {
   await audioHarness(page);
-  await page.goto("/");
+  await page.goto("/?tools");
   await expect(
     page.getByRole("heading", { name: "A quieter way forward." }),
   ).toBeVisible();
@@ -68,7 +68,7 @@ test("calibrates through Web Audio, survives reload, starts and ends a real-mic 
   page,
 }) => {
   await audioHarness(page);
-  await page.goto("/");
+  await page.goto("/?tools");
   await page.getByRole("button", { name: "Calibration", exact: true }).click();
   await page.getByRole("button", { name: "Enable microphone / retry" }).click();
   await page.getByRole("button", { name: "Sample background · 2 sec" }).click();
@@ -165,7 +165,7 @@ for (const dropout of [false, true])
     page,
   }) => {
     await page.clock.install();
-    await page.goto("/");
+    await page.goto("/?tools");
     await page.selectOption("#demo-audio", "scripted");
     if (dropout)
       await page.getByLabel("Simulate GPS dropout in first zone").check();
@@ -201,7 +201,7 @@ test("desktop overview and production asset requests stay local", async ({
       foreign.push(r.url());
   });
   await page.setViewportSize({ width: 1440, height: 1100 });
-  await page.goto("/");
+  await page.goto("/?tools");
   await expect(
     page.getByRole("button", { name: "Calibration", exact: true }),
   ).toBeVisible();
